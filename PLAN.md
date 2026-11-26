@@ -11,6 +11,7 @@ Decisiones: Evento → Sesiones (cada tablet elige evento + sesión; N tablets p
 | 4 | Seed ECAD 2026 (`backend/seed/ecad2026.json`) desde el PDF | S0 (Gemini Flash) | — | `python3 -c "import json;d=json.load(open('backend/seed/ecad2026.json'));assert len(d['sessions'])>=25"` | hecho (65737b0, 35 sesiones) |
 | 5 | Merge ramas + integración E2E (compose + web contra API + smoke device) | yo | 1-4 | `scripts/smoke.sh` y `web` build | hecho (0b1a36e, E2E OK sin bugs) |
 | 6 | Revisión cruzada backend/auth (Gemini Flash high) | S1+ | 1-3 | hallazgos resueltos | hecho (6 hallazgos menores, 5 corregidos en 262c804) |
+| 7 | Escáner QR web en el panel (staff, login admin) + /device/checkins acepta Bearer admin + HTTPS (Caddy) en compose | M (Sonnet) | 1-2 | `cd web && npm run lint && npm run build` + go test + smoke | hecho (00eb7b0, Playwright OK; falta celular real) |
 
 ## Pendiente (fuera de este plan)
 - Probar la app en una tablet/teléfono Android real (dev build): cámara frontal/trasera, Excel local, compartir, cola offline. No hay `adb` en este equipo.
