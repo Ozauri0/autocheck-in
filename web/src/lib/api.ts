@@ -2,7 +2,9 @@ import "server-only";
 import { getToken } from "./session";
 import type {
   Admin,
+  CheckinInput,
   CheckinPage,
+  CheckinResult,
   Event,
   EventDetail,
   EventInput,
@@ -87,6 +89,11 @@ export const api = {
       auth: false,
     }),
   me: () => json<Admin>("/auth/me"),
+
+  // Endpoints de dispositivo: aceptan el Bearer del admin (escáner web).
+  deviceEvents: async () => (await json<EventDetail[] | null>("/device/events")) ?? [],
+  deviceCheckins: (checkins: CheckinInput[]) =>
+    json<{ results: CheckinResult[] }>("/device/checkins", { method: "POST", body: { checkins } }),
 
   listEvents: async (includeInactive: boolean) =>
     (await json<EventSummary[] | null>(`/events?includeInactive=${includeInactive}`)) ?? [],

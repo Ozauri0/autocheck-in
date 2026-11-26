@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut, QrCode } from "lucide-react";
 import Link from "next/link";
 import { logoutAction } from "@/lib/actions";
 
@@ -19,15 +19,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/eventos" className="font-semibold">
             Auto check-in <span className="text-sky-300">UCT</span>
           </Link>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-navy-light"
+          <div className="flex items-center gap-1">
+            <Link
+              href="/escanear"
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm whitespace-nowrap hover:bg-navy-light"
             >
-              <LogOut aria-hidden className="size-4" />
-              Cerrar sesión
-            </button>
-          </form>
+              <QrCode aria-hidden className="size-4" />
+              Escanear QR
+            </Link>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm whitespace-nowrap hover:bg-navy-light"
+              >
+                <LogOut aria-hidden className="size-4" />
+                {/* En celular solo el icono; el texto sigue para lectores de pantalla. */}
+                <span className="max-sm:sr-only">Cerrar sesión</span>
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main id="contenido" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">

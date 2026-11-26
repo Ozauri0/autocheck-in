@@ -45,5 +45,23 @@ services:
       - api
     restart: unless-stopped
 
+  # HTTPS opcional para usar la cámara desde otros equipos (ver README).
+  caddy:
+    image: caddy:2-alpine
+    profiles: [https]
+    ports:
+      - "${HTTPS_PORT:-8443}:443"
+    environment:
+      # IP o nombre con el que se abre el panel
+      HTTPS_HOST: ${HTTPS_HOST:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Conserva la autoridad certificadora: la advertencia no reaparece al recrear.
+      - caddy-data:/data
+    depends_on:
+      - web
+    restart: unless-stopped
+
 volumes:
   mongo-data:
+  caddy-data:

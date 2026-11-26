@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { api, ApiError } from "./api";
 import { fromLocalInput } from "./dates";
 import type { FormState } from "./forms";
+import { nextPath } from "./next-path";
 import { clearToken, setToken } from "./session";
 import type { EventInput, SessionInput } from "./types";
 
@@ -48,7 +49,7 @@ export async function loginAction(_prev: FormState, form: FormData): Promise<For
       values,
     };
   }
-  redirect("/eventos");
+  redirect(nextPath(form.get("next")));
 }
 
 export async function logoutAction() {

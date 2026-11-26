@@ -14,6 +14,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/uct/autocheckin/backend/internal/auth"
 	"github.com/uct/autocheckin/backend/internal/config"
 	"github.com/uct/autocheckin/backend/internal/db"
 )
@@ -50,6 +51,76 @@ func (a *api) raw(method, path string, body any) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	a.h.ServeHTTP(w, r)
 	return w
+}
+
+// Los endpoints de dispositivo aceptan X-Device-Key o Bearer admin. Se usa un
+// cuerpo inválido: 400 significa que la autenticación pasó.
+func TestDeviceAuth(t *testing.T) {
+	h := New(testCfg, nil)
+	token, err := auth.NewToken(testCfg.JWTSecret, "admin", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	expired, _ := auth.NewToken(testCfg.JWTSecret, "admin", time.Now().Add(-13*time.Hour))
+	tests := []struct {
+		name, key, bearer string
+		want              int
+	}{
+		{"sin credenciales", "", "", 401},
+		{"device key", "k", "", 400},
+		{"bearer admin", "", token, 400},
+		{"key mala y bearer válido", "mala", token, 400},
+		{"key válida y bearer malo", "k", "x.y.z", 400},
+		{"key mala", "mala", "", 401},
+		{"bearer expirado", "", expired, 401},
+	}
+	for _, tc := range tests {
+		for _, route := range [][2]string{{"POST", "/device/checkins"}, {"GET", "/device/events"}} {
+			// Sin base de datos, /device/events solo se prueba cuando debe rechazar.
+			if route[0] == "GET" && tc.want != 401 {
+				continue
+			}
+			r := httptest.NewRequest(route[0], "/api/v1"+route[1], strings.NewReader("{"))
+			if tc.key != "" {
+				r.Header.Set("X-Device-Key", tc.key)
+			}
+			if tc.bearer != "" {
+				r.Header.Set("Authorization", "Bearer "+tc.bearer)
+			}
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, r)
+			if w.Code != tc.want {
+				t.Errorf("%s %s: status %d, want %d", tc.name, route[1], w.Code, tc.want)
+			}
+		}
+	}
+}
+
+// Con base de datos: ambos caminos llegan a leer y registrar.
+func TestDeviceEndpointsWithEitherCredential(t *testing.T) {
+	a := newAPI(t)
+	ev, se := a.fixture()
+	for i, header := range [][2]string{{"X-Device-Key", "k"}, {"Authorization", "Bearer " + a.token}} {
+		do := func(method, path, body string) string {
+			r := httptest.NewRequest(method, "/api/v1"+path, strings.NewReader(body))
+			r.Header.Set(header[0], header[1])
+			w := httptest.NewRecorder()
+			a.h.ServeHTTP(w, r)
+			if w.Code != 200 {
+				t.Fatalf("%s %s con %s: status %d: %s", method, path, header[0], w.Code, w.Body)
+			}
+			return w.Body.String()
+		}
+		if out := do("GET", "/device/events", ""); !strings.Contains(out, se) {
+			t.Fatalf("sesión ausente: %s", out)
+		}
+		out := do("POST", "/device/checkins", fmt.Sprintf(
+			`{"checkins":[{"clientId":"e%d","eventId":"%s","sessionId":"%s","raw":"P%d|%d|p@uct.cl","scannedAt":"2026-11-25T12:00:00Z"}]}`,
+			i, ev, se, i, i+1))
+		if !strings.Contains(out, `"status":"created"`) {
+			t.Fatalf("check-in con %s: %s", header[0], out)
+		}
+	}
 }
 
 // Sin base de datos: rutas que fallan antes de consultarla.

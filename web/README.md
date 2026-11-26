@@ -25,5 +25,8 @@ En Linux añada `--add-host=host.docker.internal:host-gateway`.
 - Patrón BFF: el navegador nunca llama a la API Go. `API_URL` solo existe en el servidor.
 - El JWT se guarda en la cookie httpOnly `session`. En producción es `Secure`: se requiere HTTPS
   (o `http://localhost`) para poder iniciar sesión.
+- `/escanear`: escáner QR desde el navegador (respaldo de la app Android). La cola de pendientes
+  vive en `localStorage` y se envía por `/api/scan`. La cámara exige HTTPS o `localhost`
+  (ver el [README raíz](../README.md#escaneo-desde-el-navegador)).
 - `src/proxy.ts` protege las rutas (en Next 16, `proxy` reemplaza a `middleware`).
 - Todas las fechas se muestran e ingresan en la zona `America/Santiago`.

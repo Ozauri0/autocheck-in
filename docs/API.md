@@ -9,6 +9,7 @@ Errores: `{ "error": "<mensaje>" }` con status HTTP apropiado (400/401/404/409/5
 - **Admin (web)**: `POST /auth/login` → JWT HS256 (`JWT_SECRET`, exp 12h). Header `Authorization: Bearer <token>`.
   Admin inicial se crea al arrancar si no existe, desde env `ADMIN_EMAIL` / `ADMIN_PASSWORD` (bcrypt).
 - **Dispositivo (app)**: header `X-Device-Key: <DEVICE_API_KEY>` (clave compartida, env del backend; se configura en Ajustes de la app).
+  Los endpoints `/device/*` aceptan como alternativa `Authorization: Bearer <JWT admin>` (escáner web del panel, vía BFF). Basta una de las dos credenciales; sin ninguna válida → `401`.
 
 ## Formato del QR
 Texto plano separado por `|`: `nombre|rut|email[|extra...]`. Ej: `Daniela contreras|13816473|cferrer2021@alu.uct.cl`.
@@ -61,7 +62,7 @@ Reenvío del mismo `clientId` es idempotente (status `exists`, no crea nada).
   - Hoja **"Registros"**: todos los check-ins (incl. duplicados): Fecha/hora escaneo, Sesión, Sala, Nombre, RUT, Email, Extra, Dispositivo, Duplicado (Sí/No), Raw.
   - Horas en `America/Santiago`.
 
-### Dispositivo (X-Device-Key)
+### Dispositivo (X-Device-Key o Bearer admin)
 - `GET /device/events` → `[Event & {sessions:[Session]}]` solo `active=true`, orden `startDate asc`
 - `POST /device/checkins` `{checkins:[{clientId, eventId, sessionId, deviceId, deviceName, raw, scannedAt}]}` (máx 500)
   → `200 {results:[{clientId, status:"created"|"duplicate"|"exists"|"error", duplicate: bool, message?}]}`

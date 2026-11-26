@@ -35,9 +35,11 @@ func TestMiddleware(t *testing.T) {
 		{"admin ok", "Authorization", "Bearer " + tok, RequireAdmin("s")(ok), 200},
 		{"admin sin token", "Authorization", "", RequireAdmin("s")(ok), 401},
 		{"admin basura", "Authorization", "Bearer x.y.z", RequireAdmin("s")(ok), 401},
-		{"device ok", "X-Device-Key", "k", RequireDevice("k")(ok), 200},
-		{"device mala", "X-Device-Key", "z", RequireDevice("k")(ok), 401},
-		{"device sin config", "X-Device-Key", "", RequireDevice("")(ok), 401},
+		{"device ok", "X-Device-Key", "k", RequireDevice("k", "s")(ok), 200},
+		{"device mala", "X-Device-Key", "z", RequireDevice("k", "s")(ok), 401},
+		{"device sin config", "X-Device-Key", "", RequireDevice("", "s")(ok), 401},
+		{"device con bearer admin", "Authorization", "Bearer " + tok, RequireDevice("k", "s")(ok), 200},
+		{"device con bearer inválido", "Authorization", "Bearer x.y.z", RequireDevice("k", "s")(ok), 401},
 	}
 	for _, tc := range tests {
 		r := httptest.NewRequest(http.MethodGet, "/", nil)

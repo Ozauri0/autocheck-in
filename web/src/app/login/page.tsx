@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { nextPath } from "@/lib/next-path";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Iniciar sesión" };
@@ -6,9 +7,9 @@ export const metadata: Metadata = { title: "Iniciar sesión" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ expirada?: string }>;
+  searchParams: Promise<{ expirada?: string; next?: string }>;
 }) {
-  const { expirada } = await searchParams;
+  const { expirada, next } = await searchParams;
   return (
     <main className="flex flex-1 items-center justify-center bg-navy px-4 py-10">
       <div className="w-full max-w-sm rounded-lg border-t-4 border-accent bg-white p-6 shadow-xl">
@@ -21,7 +22,7 @@ export default async function LoginPage({
             Su sesión expiró. Ingrese nuevamente.
           </p>
         )}
-        <LoginForm />
+        <LoginForm next={nextPath(next)} />
       </div>
     </main>
   );

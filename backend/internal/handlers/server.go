@@ -72,7 +72,7 @@ func New(cfg config.Config, store *db.Store) http.Handler {
 		})
 
 		r.Group(func(r chi.Router) {
-			r.Use(auth.RequireDevice(cfg.DeviceAPIKey))
+			r.Use(auth.RequireDevice(cfg.DeviceAPIKey, cfg.JWTSecret))
 			r.Get("/device/events", s.deviceEvents)
 			r.Post("/device/checkins", s.deviceCheckins)
 		})

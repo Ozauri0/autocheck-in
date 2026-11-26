@@ -50,17 +50,22 @@ func unauthorized(w http.ResponseWriter) {
 	_, _ = w.Write([]byte(`{"error":"no autorizado"}` + "\n"))
 }
 
+// adminFrom devuelve el id del admin de un `Authorization: Bearer <token>` válido.
+func adminFrom(r *http.Request, secret string) (string, bool) {
+	token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if !ok {
+		return "", false
+	}
+	id, err := ParseToken(secret, token)
+	return id, err == nil && id != ""
+}
+
 // RequireAdmin exige `Authorization: Bearer <token>`.
 func RequireAdmin(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+			id, ok := adminFrom(r, secret)
 			if !ok {
-				unauthorized(w)
-				return
-			}
-			id, err := ParseToken(secret, token)
-			if err != nil || id == "" {
 				unauthorized(w)
 				return
 			}
@@ -69,17 +74,22 @@ func RequireAdmin(secret string) func(http.Handler) http.Handler {
 	}
 }
 
-// RequireDevice exige el header X-Device-Key (comparación en tiempo constante).
-func RequireDevice(key string) func(http.Handler) http.Handler {
+// RequireDevice exige el header X-Device-Key (comparación en tiempo constante)
+// o, como alternativa, un JWT de admin válido (escáner web del panel).
+func RequireDevice(key, secret string) func(http.Handler) http.Handler {
 	want := sha256.Sum256([]byte(key))
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			got := sha256.Sum256([]byte(r.Header.Get("X-Device-Key")))
-			if key == "" || subtle.ConstantTimeCompare(got[:], want[:]) != 1 {
-				unauthorized(w)
+			if key != "" && subtle.ConstantTimeCompare(got[:], want[:]) == 1 {
+				next.ServeHTTP(w, r)
 				return
 			}
-			next.ServeHTTP(w, r)
+			if _, ok := adminFrom(r, secret); ok {
+				next.ServeHTTP(w, r)
+				return
+			}
+			unauthorized(w)
 		})
 	}
 }

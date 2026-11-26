@@ -1,0 +1,12 @@
+# Proxy HTTPS opcional (docker compose --profile https): certificado autofirmado.
+{
+	# Al entrar por IP el navegador no envía SNI: se usa este nombre para el certificado.
+	default_sni {$HTTPS_HOST:localhost}
+}
+
+:443 {
+	tls internal {
+		on_demand
+	}
+	reverse_proxy web:3000
+}

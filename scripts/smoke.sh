@@ -112,6 +112,14 @@ OUT="$(req 200 GET "/events/$EVENT_ID/checkins?includeDuplicates=true" "${AUTH[@
 expect "lista con duplicados" "$(json total <<<"$OUT")" 3
 ok "lista de checkins"
 
+# Escáner web del panel: /device/* con Bearer admin, sin device key.
+req 200 GET /device/events "${AUTH[@]}" | grep -q "$SESSION_ID" || fail "/device/events con Bearer no incluye la sesión"
+req 401 POST /device/checkins "${JSON[@]}" -d '{"checkins":[]}' >/dev/null
+req 401 POST /device/checkins -H 'Authorization: Bearer x.y.z' "${JSON[@]}" -d '{"checkins":[]}' >/dev/null
+OUT="$(req 200 POST /device/checkins "${AUTH[@]}" "${JSON[@]}" -d "{\"checkins\":[$(item "$RUN-web" 2026-11-25T09:30:00-03:00)]}")"
+expect "checkin con Bearer" "$(json results.0.status <<<"$OUT")" duplicate
+ok "check-in vía Bearer admin"
+
 req 204 DELETE "/events/$EVENT_ID" "${AUTH[@]}" >/dev/null
 req 404 GET "/events/$EVENT_ID" "${AUTH[@]}" >/dev/null
 EVENT_ID=""

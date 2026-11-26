@@ -45,6 +45,7 @@ Puertos del host (variables de entorno al ejecutar `docker compose`):
 | `API_PORT` | `8080` |
 | `MONGO_PORT` | `27017` |
 | `WEB_PORT` | `3000` |
+| `HTTPS_PORT` | `8443` (solo con `--profile https`) |
 
 Configuración de los servicios (se edita en `docker-compose.yml`):
 
@@ -75,6 +76,25 @@ Cómo compilar e instalar: [`mobile/README.md`](mobile/README.md). En la pantall
 | Clave del dispositivo | el valor de `DEVICE_API_KEY` (`dev-device-key` en desarrollo) |
 
 En Linux la IP LAN se ve con `ip -4 addr`. La tablet y el PC deben estar en la misma red y el firewall debe permitir el puerto de la API. Pulse **Probar conexión** y luego **Guardar**.
+
+## Escaneo desde el navegador
+
+Respaldo de la app Android cuando una tablet falla: el ayudante entra al panel desde su celular o notebook, abre **Escanear QR** (`/escanear`, mismo login admin), elige evento y sesión y lee el QR del asistente. Los registros aparecen en la pestaña **Asistentes** con el nombre que se le dio al dispositivo. Sin conexión quedan guardados en el navegador y se envían al volver la red (la página debe haberse abierto con conexión y no recargarse mientras no la haya).
+
+Los navegadores solo permiten usar la cámara en un contexto seguro: **HTTPS**, o `http://localhost` en el mismo equipo. Abrir `http://<IP LAN>:3000` desde un celular no sirve. Para la red local, compose incluye Caddy con un certificado autofirmado:
+
+```sh
+COOKIE_SECURE=true HTTPS_HOST=192.168.1.10 docker compose --profile https up -d --build
+```
+
+- `HTTPS_HOST` es la IP LAN o el nombre del PC (por defecto `localhost`). En el celular se abre `https://192.168.1.10:8443/escanear` (puerto: `HTTPS_PORT`).
+- La primera vez hay que aceptar la advertencia del certificado (*Avanzado → Continuar*; en Safari, *Mostrar detalles → visitar este sitio web*).
+- `COOKIE_SECURE=true` marca la cookie de sesión como solo HTTPS: con él ya no se puede iniciar sesión por `http://<IP>:3000`. Repita las variables en cada `docker compose up` (o póngalas en un archivo `.env`).
+- El firewall debe permitir el puerto HTTPS.
+
+En producción use un dominio con certificado real (en el `Caddyfile`, el dominio en lugar de `:443` y sin `tls internal`; puertos 80 y 443 publicados) y `COOKIE_SECURE=true`.
+
+Quien escanea usa la cuenta de administrador, con acceso a todo el panel: entréguela solo a personas de confianza.
 
 ## Formato del QR
 

@@ -78,3 +78,20 @@ export type EventInput = Pick<
 >;
 
 export type SessionInput = Pick<Session, "name" | "room" | "startsAt" | "endsAt" | "order">;
+
+export interface CheckinInput {
+  clientId: string;
+  eventId: string;
+  sessionId: string;
+  deviceId: string;
+  deviceName: string;
+  raw: string;
+  scannedAt: string;
+}
+
+export interface CheckinResult {
+  clientId: string;
+  status: "created" | "duplicate" | "exists" | "error";
+  duplicate: boolean;
+  message?: string;
+}
