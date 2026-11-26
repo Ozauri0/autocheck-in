@@ -1,12 +1,44 @@
+# Dependencias y builds
 node_modules/
 .next/
+out/
 dist/
 build/
-.expo/
-*.log
-.env
-.env.local
 backend/bin/
+*.tsbuildinfo
+coverage/
+*.test
+*.out
+
+# Expo / React Native
+.expo/
+.expo-shared/
 mobile/android/
 mobile/ios/
+*.apk
+*.aab
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+*.pem
+
+# Logs y temporales
+*.log
+npm-debug.log*
+*.tmp
+
+# Editor / SO
+.vscode/
+.idea/
 .DS_Store
+Thumbs.db
+
+# Claude Code local
+.claude/settings.local.json
