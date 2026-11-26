@@ -14,6 +14,9 @@ import (
 	"github.com/uct/autocheckin/backend/internal/models"
 )
 
+// dummyHash se compara cuando el email no existe (mismo coste que un admin real).
+var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("autocheckin-dummy"), bcrypt.DefaultCost)
+
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Email    string `json:"email"`
@@ -33,7 +36,13 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, err)
 		return
 	}
-	if err != nil || bcrypt.CompareHashAndPassword([]byte(a.PasswordHash), []byte(in.Password)) != nil {
+	if err != nil {
+		// Igualar el tiempo de respuesta para no revelar qué emails existen.
+		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(in.Password))
+		writeError(w, 401, "credenciales inválidas")
+		return
+	}
+	if bcrypt.CompareHashAndPassword([]byte(a.PasswordHash), []byte(in.Password)) != nil {
 		writeError(w, 401, "credenciales inválidas")
 		return
 	}

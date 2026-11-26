@@ -65,9 +65,10 @@ type checkinInput struct {
 }
 
 type checkinResult struct {
-	ClientID string `json:"clientId"`
-	Status   string `json:"status"`
-	Message  string `json:"message,omitempty"`
+	ClientID  string `json:"clientId"`
+	Status    string `json:"status"`
+	Duplicate bool   `json:"duplicate"`
+	Message   string `json:"message,omitempty"`
 }
 
 // build valida un ítem; devuelve un mensaje si es inválido.
@@ -92,7 +93,7 @@ func (in checkinInput) build() (models.Checkin, string) {
 	}
 	attendee := qr.Parse(in.Raw)
 	return models.Checkin{
-		ID: bson.NewObjectID(), ClientID: in.ClientID, EventID: eventID, SessionID: sessionID,
+		ID: bson.NewObjectID(), ClientID: strings.TrimSpace(in.ClientID), EventID: eventID, SessionID: sessionID,
 		DeviceID: in.DeviceID, DeviceName: in.DeviceName, Raw: in.Raw,
 		Attendee: attendee, AttendeeKey: qr.AttendeeKey(attendee, in.Raw),
 		ScannedAt: utc(scannedAt), ReceivedAt: models.Now(),
@@ -107,6 +108,7 @@ func (s *Server) sessionEvent(ctx context.Context, cache map[bson.ObjectID]bson.
 	var sess models.Session
 	err := s.store.Sessions.FindOne(ctx, bson.M{"_id": id}).Decode(&sess)
 	if errors.Is(err, mongo.ErrNoDocuments) {
+		cache[id] = bson.NilObjectID
 		return bson.NilObjectID, nil
 	}
 	if err != nil {
@@ -147,12 +149,12 @@ func (s *Server) deviceCheckins(w http.ResponseWriter, r *http.Request) {
 			case bson.NilObjectID:
 				msg = "sesión inexistente"
 			case c.EventID:
-				status, err := s.recorder.Record(ctx, c)
+				status, dup, err := s.recorder.Record(ctx, c)
 				if err != nil {
 					fail(w, r, err)
 					return
 				}
-				res.Status = status
+				res.Status, res.Duplicate = status, dup
 			default:
 				msg = "la sesión no pertenece al evento"
 			}

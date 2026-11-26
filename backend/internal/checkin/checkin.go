@@ -41,48 +41,58 @@ func (r *Recorder) lock(session bson.ObjectID, key string) func() {
 }
 
 // Record inserta c (si su clientId es nuevo) y recalcula los duplicados del par.
-func (r *Recorder) Record(ctx context.Context, c models.Checkin) (string, error) {
-	if done, err := r.heal(ctx, c.ClientID); err != nil || done {
-		return StatusExists, err
+// Devuelve el estado y si el registro quedó marcado como duplicado.
+func (r *Recorder) Record(ctx context.Context, c models.Checkin) (string, bool, error) {
+	done, dup, err := r.heal(ctx, c.ClientID)
+	if err != nil {
+		return StatusError, false, err
+	}
+	if done {
+		return StatusExists, dup, nil
 	}
 
 	unlock := r.lock(c.SessionID, c.AttendeeKey)
 	// Se inserta como duplicado y el recálculo promueve al primero.
 	c.Duplicate = true
-	_, err := r.coll.InsertOne(ctx, c)
+	_, err = r.coll.InsertOne(ctx, c)
 	if mongo.IsDuplicateKeyError(err) {
 		unlock()
-		return StatusExists, nil
+		_, dup, err = r.heal(ctx, c.ClientID)
+		if err != nil {
+			return StatusError, false, err
+		}
+		return StatusExists, dup, nil
 	}
 	if err != nil {
 		unlock()
-		return "", err
+		return StatusError, false, err
 	}
 	first, err := r.recalc(ctx, c.SessionID, c.AttendeeKey)
 	unlock()
 	if err != nil {
-		return "", err
+		return StatusError, false, err
 	}
 	if first == c.ID {
-		return StatusCreated, nil
+		return StatusCreated, false, nil
 	}
-	return StatusDuplicate, nil
+	return StatusDuplicate, true, nil
 }
 
 // heal indica si el clientId ya existe; en ese caso recalcula su par, lo que
-// repara un envío anterior interrumpido entre la inserción y el recálculo.
-func (r *Recorder) heal(ctx context.Context, clientID string) (bool, error) {
+// repara un envío anterior interrumpido entre la inserción y el recálculo, y
+// devuelve si ese registro es duplicado.
+func (r *Recorder) heal(ctx context.Context, clientID string) (bool, bool, error) {
 	var prev models.Checkin
 	err := r.coll.FindOne(ctx, bson.M{"clientId": clientID}).Decode(&prev)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return false, nil
+		return false, false, nil
 	}
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	defer r.lock(prev.SessionID, prev.AttendeeKey)()
-	_, err = r.recalc(ctx, prev.SessionID, prev.AttendeeKey)
-	return true, err
+	first, err := r.recalc(ctx, prev.SessionID, prev.AttendeeKey)
+	return true, first != prev.ID, err
 }
 
 // recalc deja duplicate=false solo en el escaneo más antiguo (a igual hora,

@@ -86,7 +86,13 @@ expect "checkin 1" "$(json results.0.status <<<"$OUT")" created
 expect "checkin 2" "$(json results.1.status <<<"$OUT")" duplicate
 OUT="$(req 200 POST /device/checkins "${DEV[@]}" "${JSON[@]}" -d "{\"checkins\":[$(item "$RUN-1" 2026-11-25T09:05:00-03:00)]}")"
 expect "reenvío" "$(json results.0.status <<<"$OUT")" exists
-ok "checkins created/duplicate/exists"
+expect "reenvío no duplicado" "$(json results.0.duplicate <<<"$OUT")" false
+# Escaneo offline anterior que llega tarde: pasa a ser el primero y el 1 queda duplicado.
+OUT="$(req 200 POST /device/checkins "${DEV[@]}" "${JSON[@]}" -d "{\"checkins\":[$(item "$RUN-0" 2026-11-25T09:01:00-03:00)]}")"
+expect "offline tardío" "$(json results.0.status <<<"$OUT")" created
+OUT="$(req 200 POST /device/checkins "${DEV[@]}" "${JSON[@]}" -d "{\"checkins\":[$(item "$RUN-1" 2026-11-25T09:05:00-03:00)]}")"
+expect "reenvío tras reordenar" "$(json results.0.duplicate <<<"$OUT")" true
+ok "checkins created/duplicate/exists + orden offline"
 
 OUT="$(req 200 GET "/events/$EVENT_ID/stats" "${AUTH[@]}")"
 expect "stats sesión" "$(json sessions.0.count <<<"$OUT")" 1
@@ -103,7 +109,7 @@ OUT="$(req 200 GET "/events/$EVENT_ID/checkins" "${AUTH[@]}")"
 expect "lista total" "$(json total <<<"$OUT")" 1
 expect "lista nombre" "$(json items.0.attendee.name <<<"$OUT")" "Daniela contreras"
 OUT="$(req 200 GET "/events/$EVENT_ID/checkins?includeDuplicates=true" "${AUTH[@]}")"
-expect "lista con duplicados" "$(json total <<<"$OUT")" 2
+expect "lista con duplicados" "$(json total <<<"$OUT")" 3
 ok "lista de checkins"
 
 req 204 DELETE "/events/$EVENT_ID" "${AUTH[@]}" >/dev/null

@@ -62,7 +62,9 @@ export async function sendRecord(
         return { kind: 'error', message: result.message ?? 'Rechazado por el servidor' };
       }
       if (!result) return fallback;
-      return record.duplicate || result.status === 'duplicate' ? { kind: 'duplicate' } : { kind: 'ok' };
+      return record.duplicate || result.status === 'duplicate' || result.duplicate === true
+        ? { kind: 'duplicate' }
+        : { kind: 'ok' };
     },
     () => fallback,
   );

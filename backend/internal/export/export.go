@@ -74,7 +74,7 @@ func Write(w io.Writer, sessions []models.Session, checkins []models.Checkin, lo
 		fill(&p.name, c.Attendee.Name)
 		fill(&p.rut, c.Attendee.RUT)
 		fill(&p.email, c.Attendee.Email)
-		if !c.Duplicate {
+		if _, seen := p.times[c.SessionID.Hex()]; !seen && !c.Duplicate {
 			p.times[c.SessionID.Hex()] = c.ScannedAt
 		}
 	}

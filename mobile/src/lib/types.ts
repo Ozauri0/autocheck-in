@@ -33,6 +33,7 @@ export interface CheckinPayload {
 export interface CheckinResult {
   clientId: string;
   status: 'created' | 'duplicate' | 'exists' | 'error';
+  duplicate?: boolean;
   message?: string;
 }
 

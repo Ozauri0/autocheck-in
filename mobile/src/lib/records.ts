@@ -16,7 +16,7 @@ export function applyResult(record: LocalRecord, result: CheckinResult): LocalRe
   return {
     ...record,
     status: 'sent',
-    duplicate: record.duplicate || result.status === 'duplicate',
+    duplicate: record.duplicate || result.status === 'duplicate' || result.duplicate === true,
     error: undefined,
   };
 }

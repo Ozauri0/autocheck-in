@@ -55,7 +55,7 @@ Reenvío del mismo `clientId` es idempotente (status `exists`, no crea nada).
 - `DELETE /sessions/{id}` → `204` (borra sus checkins)
 - `GET /events/{id}/checkins?sessionId=&q=&includeDuplicates=false&page=1&limit=50`
   → `{items:[Checkin & {sessionName}], total, page, limit}` (q busca en name/rut/email, case-insensitive; orden scannedAt desc)
-- `GET /events/{id}/stats` → `{ totalCheckins, uniqueAttendees, sessions:[{sessionId, name, room, count}] }` (count sin duplicados)
+- `GET /events/{id}/stats` → `{ totalCheckins, uniqueAttendees, sessions:[{sessionId, name, room, count}] }` (totalCheckins y count excluyen duplicados)
 - `GET /events/{id}/export.xlsx?sessionId=` → archivo `.xlsx` (`Content-Disposition: attachment`):
   - Hoja **"Consolidado"**: una fila por attendeeKey del evento: Nombre, RUT, Email, Total sesiones asistidas, y una columna por sesión (`Sesión — Sala`) con la hora del primer check-in o vacío.
   - Hoja **"Registros"**: todos los check-ins (incl. duplicados): Fecha/hora escaneo, Sesión, Sala, Nombre, RUT, Email, Extra, Dispositivo, Duplicado (Sí/No), Raw.
@@ -64,8 +64,9 @@ Reenvío del mismo `clientId` es idempotente (status `exists`, no crea nada).
 ### Dispositivo (X-Device-Key)
 - `GET /device/events` → `[Event & {sessions:[Session]}]` solo `active=true`, orden `startDate asc`
 - `POST /device/checkins` `{checkins:[{clientId, eventId, sessionId, deviceId, deviceName, raw, scannedAt}]}` (máx 500)
-  → `200 {results:[{clientId, status:"created"|"duplicate"|"exists"|"error", message?}]}`
-  (`duplicate` = se guardó pero marcado duplicado; `error` p.ej. sesión inexistente). El backend re-parsea `raw`.
+  → `200 {results:[{clientId, status:"created"|"duplicate"|"exists"|"error", duplicate: bool, message?}]}`
+  (`status:"duplicate"` = se guardó pero marcado duplicado; `exists` = clientId ya recibido, `duplicate` indica su marca actual;
+  `error` p.ej. sesión inexistente o `raw` vacío/>4096 bytes). El backend re-parsea `raw`. Un fallo de BD devuelve 500 (reintentar el lote).
 
 ## Config backend (env)
 `PORT=8080`, `MONGO_URI=mongodb://mongo:27017`, `MONGO_DB=autocheckin`, `JWT_SECRET`, `DEVICE_API_KEY`,
