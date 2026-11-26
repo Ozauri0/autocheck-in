@@ -30,228 +30,179 @@
       "order": 3
     },
     {
-      "name": "Registro y bienvenida de asistentes",
-      "room": "Auditorio Óscar Cartagena CJP08_260",
-      "startsAt": "2026-11-26T08:30:00-03:00",
-      "endsAt": "2026-11-26T09:00:00-03:00",
-      "order": 4
-    },
-    {
       "name": "Ceremonia de inauguración oficial",
       "room": "Auditorio Óscar Cartagena CJP08_260",
       "startsAt": "2026-11-26T09:00:00-03:00",
       "endsAt": "2026-11-26T09:45:00-03:00",
-      "order": 5
+      "order": 4
     },
     {
       "name": "Conferencia inaugural — Cristóbal Cobo: La universidad ante su examen más difícil: enseñar a pensar en tiempos de inteligencia artificial",
       "room": "Auditorio Óscar Cartagena CJP08_260",
       "startsAt": "2026-11-26T09:45:00-03:00",
       "endsAt": "2026-11-26T10:45:00-03:00",
-      "order": 6
-    },
-    {
-      "name": "Café de inauguración",
-      "room": "Cowork CINAP CJP11_250",
-      "startsAt": "2026-11-26T10:45:00-03:00",
-      "endsAt": "2026-11-26T11:15:00-03:00",
-      "order": 7
+      "order": 5
     },
     {
       "name": "Bloque 1 · Sala 1 — La IA en la evaluación y la retroalimentación",
       "room": "Sala 1 (CJP11_212)",
       "startsAt": "2026-11-26T11:15:00-03:00",
       "endsAt": "2026-11-26T12:45:00-03:00",
-      "order": 8
+      "order": 6
     },
     {
       "name": "Bloque 1 · Sala 2 — Formación docente: programas y sus efectos",
       "room": "Sala 2 (CJP12_155)",
       "startsAt": "2026-11-26T11:15:00-03:00",
       "endsAt": "2026-11-26T12:45:00-03:00",
-      "order": 9
+      "order": 7
     },
     {
       "name": "Bloque 1 · Sala 3 — Diseño de experiencias de aprendizaje en entornos digitales",
       "room": "Sala 3 (CJP11_130)",
       "startsAt": "2026-11-26T11:15:00-03:00",
       "endsAt": "2026-11-26T12:45:00-03:00",
-      "order": 10
+      "order": 8
     },
     {
       "name": "Taller para equipos y profesionales de gestión de datos — Isabel Hilliger Carrasco: De los datos a la acción",
       "room": "CJP11_150",
       "startsAt": "2026-11-26T11:15:00-03:00",
       "endsAt": "2026-11-26T13:00:00-03:00",
-      "order": 11
-    },
-    {
-      "name": "Almuerzo general",
-      "room": "CEDELEM",
-      "startsAt": "2026-11-26T13:00:00-03:00",
-      "endsAt": "2026-11-26T14:30:00-03:00",
-      "order": 12
+      "order": 9
     },
     {
       "name": "Bloque 2 · Sala 1 — Orientaciones institucionales y alfabetización en IA",
       "room": "Sala 1 (CJP11_212)",
       "startsAt": "2026-11-26T14:30:00-03:00",
       "endsAt": "2026-11-26T16:00:00-03:00",
-      "order": 13
+      "order": 10
     },
     {
       "name": "Bloque 2 · Sala 2 — Acompañamiento situado y práctica reflexiva",
       "room": "Sala 2 (CJP08_390)",
       "startsAt": "2026-11-26T14:30:00-03:00",
       "endsAt": "2026-11-26T16:00:00-03:00",
-      "order": 14
+      "order": 11
     },
     {
       "name": "Bloque 2 · Sala 3 — Investigación en docencia y comunidades SoTL",
       "room": "Sala 3 (CJP11_130)",
       "startsAt": "2026-11-26T14:30:00-03:00",
       "endsAt": "2026-11-26T16:00:00-03:00",
-      "order": 15
+      "order": 12
     },
     {
       "name": "Bloque 3 · Sala 1 — Perfil de egreso, analítica y decisiones basadas en evidencia",
       "room": "Sala 1 (CJP11_212)",
       "startsAt": "2026-11-26T16:30:00-03:00",
       "endsAt": "2026-11-26T17:55:00-03:00",
-      "order": 16
+      "order": 13
     },
     {
       "name": "Bloque 3 · Sala 2 — Evidencias del desarrollo docente",
       "room": "Sala 2 (CJP08_390)",
       "startsAt": "2026-11-26T16:30:00-03:00",
       "endsAt": "2026-11-26T17:55:00-03:00",
-      "order": 17
+      "order": 14
     },
     {
       "name": "Bloque 3 · Sala 3 — Gestión de la innovación docente",
       "room": "Sala 3 (CJP11_130)",
       "startsAt": "2026-11-26T16:30:00-03:00",
       "endsAt": "2026-11-26T17:55:00-03:00",
-      "order": 18
-    },
-    {
-      "name": "Cóctel ECAD 2026",
-      "room": "Sector Laguna",
-      "startsAt": "2026-11-26T18:00:00-03:00",
-      "endsAt": "2026-11-26T19:00:00-03:00",
-      "order": 19
-    },
-    {
-      "name": "Recepción de asistentes",
-      "room": "Auditorio Óscar Cartagena CJP08_260",
-      "startsAt": "2026-11-27T08:30:00-03:00",
-      "endsAt": "2026-11-27T09:00:00-03:00",
-      "order": 20
+      "order": 15
     },
     {
       "name": "Panel de conversación: DesafIA la docencia en Educación Superior — Reflexiones compartidas desde el encuentro de Centros de Apoyo a la Docencia 2026",
       "room": "Auditorio Óscar Cartagena CJP08_260",
       "startsAt": "2026-11-27T09:00:00-03:00",
       "endsAt": "2026-11-27T10:00:00-03:00",
-      "order": 21
+      "order": 16
     },
     {
       "name": "Sesión de pósteres y coffee break",
       "room": "CEDELEM",
       "startsAt": "2026-11-27T10:00:00-03:00",
       "endsAt": "2026-11-27T10:40:00-03:00",
-      "order": 22
+      "order": 17
     },
     {
       "name": "De la escala a la evidencia: cómo diseñar evaluaciones con IA y pensamiento crítico",
       "room": "Sala 1 (CJP11_212)",
       "startsAt": "2026-11-27T10:45:00-03:00",
       "endsAt": "2026-11-27T11:35:00-03:00",
-      "order": 23
+      "order": 18
     },
     {
       "name": "Flujos de Trabajo con Gemini Notebook y Gemas Especializadas: Respuestas a los Desafíos de la Docencia Universitaria",
       "room": "Sala 2 (CJP08_390)",
       "startsAt": "2026-11-27T10:45:00-03:00",
       "endsAt": "2026-11-27T11:35:00-03:00",
-      "order": 24
+      "order": 19
     },
     {
       "name": "Hay algo más dentro de tu LMS: Utiliza reportería del Entorno virtual de aprendizaje para la toma de decisiones",
       "room": "Sala 3 (CJP11_150)",
       "startsAt": "2026-11-27T10:45:00-03:00",
       "endsAt": "2026-11-27T11:35:00-03:00",
-      "order": 25
+      "order": 20
     },
     {
       "name": "Más allá del semáforo: rediseño estructural de evaluaciones con IA desde los centros de apoyo a la docencia",
       "room": "Sala 1 (CJP11_212)",
       "startsAt": "2026-11-27T11:50:00-03:00",
       "endsAt": "2026-11-27T12:40:00-03:00",
-      "order": 26
+      "order": 21
     },
     {
       "name": "Artefactos que transforman: cómo acompañar a docentes a diseñar experiencias de aprendizaje con IA, desde la innovación hasta la investigación en docencia",
       "room": "Sala 2 (CJP08_390)",
       "startsAt": "2026-11-27T11:50:00-03:00",
       "endsAt": "2026-11-27T12:40:00-03:00",
-      "order": 27
+      "order": 22
     },
     {
       "name": "Investigación en docencia universitaria: desafíos y posibilidades para la mejora de la enseñanza",
       "room": "Sala 3 (CJP11_150)",
       "startsAt": "2026-11-27T11:50:00-03:00",
       "endsAt": "2026-11-27T12:40:00-03:00",
-      "order": 28
-    },
-    {
-      "name": "Almuerzo general",
-      "room": "CEDELEM",
-      "startsAt": "2026-11-27T13:00:00-03:00",
-      "endsAt": "2026-11-27T14:00:00-03:00",
-      "order": 29
-    },
-    {
-      "name": "Reunión-almuerzo de la Directiva REDCAD",
-      "room": "Sala CJP11_130/140",
-      "startsAt": "2026-11-27T13:00:00-03:00",
-      "endsAt": "2026-11-27T14:00:00-03:00",
-      "order": 30
+      "order": 23
     },
     {
       "name": "Mesa 1 — IA en la docencia: evaluación, ética y orientaciones",
       "room": "Sala CJP11_212",
       "startsAt": "2026-11-27T14:15:00-03:00",
       "endsAt": "2026-11-27T15:30:00-03:00",
-      "order": 31
+      "order": 24
     },
     {
       "name": "Mesa 2 — Formación y acompañamiento docente",
       "room": "Sala CJP11_130",
       "startsAt": "2026-11-27T14:15:00-03:00",
       "endsAt": "2026-11-27T15:30:00-03:00",
-      "order": 32
+      "order": 25
     },
     {
       "name": "Mesa 3 — Evidencias, analítica",
       "room": "Sala CJP11_140",
       "startsAt": "2026-11-27T14:15:00-03:00",
       "endsAt": "2026-11-27T15:30:00-03:00",
-      "order": 33
+      "order": 26
     },
     {
       "name": "Mesa 4 — Investigación e innovación en docencia",
       "room": "Sala CJP11_150",
       "startsAt": "2026-11-27T14:15:00-03:00",
       "endsAt": "2026-11-27T15:30:00-03:00",
-      "order": 34
+      "order": 27
     },
     {
       "name": "Cierre general del encuentro",
       "room": "Cowork CINAP CJP11_250",
       "startsAt": "2026-11-27T15:30:00-03:00",
       "endsAt": "2026-11-27T16:00:00-03:00",
-      "order": 35
+      "order": 28
     }
   ]
 }
