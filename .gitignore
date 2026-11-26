@@ -1,0 +1,12 @@
+node_modules/
+.next/
+dist/
+build/
+.expo/
+*.log
+.env
+.env.local
+backend/bin/
+mobile/android/
+mobile/ios/
+.DS_Store
