@@ -10,4 +10,4 @@ Decisiones: Evento → Sesiones (cada tablet elige evento + sesión; N tablets p
 | 3 | Mobile Expo: eventos→sesión→escáner (cámara frontal/trasera), Excel local, cola offline + sync | M (Sonnet) | contrato | `cd mobile && npx tsc --noEmit && npx jest && npx expo export --platform android` | hecho (3f98fb4, sin probar en dispositivo) |
 | 4 | Seed ECAD 2026 (`backend/seed/ecad2026.json`) desde el PDF | S0 (Gemini Flash) | — | `python3 -c "import json;d=json.load(open('backend/seed/ecad2026.json'));assert len(d['sessions'])>=25"` | hecho (65737b0, 35 sesiones) |
 | 5 | Merge ramas + integración E2E (compose + web contra API + smoke device) | yo | 1-4 | `scripts/smoke.sh` y `web` build | pendiente |
-| 6 | Revisión cruzada backend/auth (Gemini Flash high) | S1+ | 1-3 | hallazgos resueltos | en curso |
+| 6 | Revisión cruzada backend/auth (Gemini Flash high) | S1+ | 1-3 | hallazgos resueltos | hecho (6 hallazgos menores, 5 corregidos en 262c804) |
