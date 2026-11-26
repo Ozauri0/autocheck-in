@@ -39,6 +39,8 @@ services:
       - "${WEB_PORT:-3000}:3000"
     environment:
       API_URL: http://api:8080
+      # true si el panel se sirve por HTTPS; false para usarlo por HTTP en la red local
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     depends_on:
       - api
     restart: unless-stopped

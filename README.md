@@ -34,7 +34,7 @@ API_URL=http://localhost:8088 bash scripts/smoke.sh   # prueba de humo
 
 > **Es un entorno de desarrollo.** Los secretos de `docker-compose.yml` son públicos y Mongo queda expuesto sin autenticación. Cámbielos antes de usarlo en un evento real.
 >
-> La cookie de sesión del panel es `Secure`: el inicio de sesión funciona en `http://localhost`, pero para entrar desde otro equipo se necesita HTTPS.
+> Cookie de sesión del panel: `COOKIE_SECURE` (en docker compose por defecto `false`, para poder entrar por HTTP desde otros equipos de la red local). Si el panel se publica con HTTPS, usar `COOKIE_SECURE=true`.
 
 ## Variables
 
