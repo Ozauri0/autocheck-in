@@ -1,0 +1,37 @@
+# Entorno de DESARROLLO: los secretos de aquí no sirven para producción.
+name: autocheckin
+
+services:
+  mongo:
+    image: mongo:8
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: ./backend
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: autocheckin
+      JWT_SECRET: dev-secret-change-me
+      DEVICE_API_KEY: dev-device-key
+      ADMIN_EMAIL: admin@uct.cl
+      ADMIN_PASSWORD: admin1234
+      CORS_ORIGINS: http://localhost:3000
+      TZ_NAME: America/Santiago
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

@@ -1,0 +1,14 @@
+{
+  "event": {
+    "name": "Evento de ejemplo",
+    "description": "Datos mínimos para pruebas",
+    "location": "UCT Temuco",
+    "startDate": "2026-11-25T09:00:00-03:00",
+    "endDate": "2026-11-25T18:00:00-03:00",
+    "active": true
+  },
+  "sessions": [
+    { "name": "Apertura", "room": "Aula Magna", "startsAt": "2026-11-25T09:00:00-03:00", "endsAt": "2026-11-25T10:00:00-03:00", "order": 1 },
+    { "name": "Taller", "room": "Sala 101", "startsAt": "2026-11-25T10:30:00-03:00", "endsAt": "2026-11-25T12:00:00-03:00", "order": 2 }
+  ]
+}
