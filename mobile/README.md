@@ -35,13 +35,12 @@ npx expo run:android --variant release
 | Clave del dispositivo | el valor de `DEVICE_API_KEY` del backend |
 | Nombre del dispositivo | `Tablet Sala 1` |
 | Cámara por defecto | frontal |
-| Segundos de la tarjeta | 4 |
 
 Pulsa **Probar conexión** (comprueba `/health` y la clave) y luego **Guardar**. Se permite HTTP sin cifrar para servidores en red local; en ese caso la clave viaja en texto claro, así que usa una red de confianza o HTTPS.
 
 ## Uso y datos locales
 
-Eventos → Sesión → Escáner. Cada escaneo se guarda primero en el dispositivo y luego se envía; sin conexión queda pendiente y se reintenta (cada 30 s con backoff hasta 5 min, y al recuperar la red). La sincronización solo corre con la app abierta.
+Eventos → Sesión → Escáner. Cada escaneo muestra una tarjeta con su resultado que se cierra sola a los 2 s (tocarla la cierra antes). Cada escaneo se guarda primero en el dispositivo y luego se envía; sin conexión queda pendiente y se reintenta (cada 30 s con backoff hasta 5 min, y al recuperar la red). La sincronización solo corre con la app abierta.
 
 En el directorio privado de la app:
 

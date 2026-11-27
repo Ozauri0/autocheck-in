@@ -30,21 +30,16 @@ export default function SettingsScreen() {
   const [deviceKey, setDeviceKey] = useState(saved.deviceKey);
   const [deviceName, setDeviceName] = useState(saved.deviceName);
   const [camera, setCamera] = useState(saved.camera);
-  const [seconds, setSeconds] = useState(String(saved.cardSeconds));
   const [testing, setTesting] = useState(false);
 
   const config = () => ({ serverUrl: serverUrl.trim(), deviceKey: deviceKey.trim() });
 
   const save = async () => {
-    const parsed = Math.round(Number(seconds));
-    const cardSeconds = parsed >= 1 && parsed <= 30 ? parsed : 4;
-    setSeconds(String(cardSeconds));
     try {
       await saveSettings({
         ...config(),
         deviceName: deviceName.trim() || 'Tablet',
         camera,
-        cardSeconds,
       });
     } catch (e) {
       Alert.alert('Error', (e as Error).message);
@@ -107,12 +102,6 @@ export default function SettingsScreen() {
           </View>
         ))}
       </View>
-      <Field
-        label="Segundos que se muestra la tarjeta (1–30)"
-        keyboardType="number-pad"
-        value={seconds}
-        onChangeText={setSeconds}
-      />
       <Button title="Guardar" onPress={save} />
       <Button
         title={testing ? 'Probando…' : 'Probar conexión'}
