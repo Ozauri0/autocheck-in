@@ -37,6 +37,9 @@ func run() error {
 	if err := store.EnsureIndexes(ctx); err != nil {
 		return err
 	}
+	if err := store.MigrateRoles(ctx); err != nil {
+		return err
+	}
 	if err := store.EnsureAdmin(ctx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
 		return err
 	}

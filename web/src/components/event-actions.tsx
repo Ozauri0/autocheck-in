@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { deleteEventAction, toggleEventAction } from "@/lib/actions";
 import { ConfirmDelete } from "./confirm-delete";
+import { CopyEvent } from "./copy-event";
 import { button } from "./ui";
 
 export function EventActions({ id, name, active }: { id: string; name: string; active: boolean }) {
@@ -40,6 +41,7 @@ export function EventActions({ id, name, active }: { id: string; name: string; a
           <Power aria-hidden className="size-4" />
           {active ? "Desactivar" : "Activar"}
         </button>
+        <CopyEvent id={id} name={name} compact />
         <ConfirmDelete
           title="Eliminar evento"
           label={`Eliminar ${name}`}

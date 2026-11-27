@@ -53,12 +53,27 @@ type Checkin struct {
 	Duplicate   bool          `bson:"duplicate" json:"duplicate"`
 }
 
-type Admin struct {
+// Roles de usuario del panel.
+const (
+	RoleAdmin    = "admin"
+	RoleAyudante = "ayudante" // solo escanea
+)
+
+// User es un usuario del panel (colección `admins`).
+type User struct {
 	ID           bson.ObjectID `bson:"_id" json:"id"`
 	Email        string        `bson:"email" json:"email"`
 	Name         string        `bson:"name" json:"name"`
+	Role         string        `bson:"role" json:"role"`
 	PasswordHash string        `bson:"passwordHash" json:"-"`
 	CreatedAt    time.Time     `bson:"createdAt" json:"-"`
+}
+
+// Normalize trata como admin a los documentos anteriores a los roles (sin `role`).
+func (u *User) Normalize() {
+	if u.Role == "" {
+		u.Role = RoleAdmin
+	}
 }
 
 // Now devuelve la hora actual en UTC con la precisión que guarda MongoDB (ms).

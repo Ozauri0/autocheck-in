@@ -12,10 +12,14 @@ QR='Daniela contreras|13816473|cferrer2021@alu.uct.cl'
 TMP="$(mktemp -d)"
 TOKEN=""
 EVENT_ID=""
+COPY_ID=""
+HELPER_ID=""
 
 cleanup() {
-  if [[ -n "$EVENT_ID" && -n "$TOKEN" ]]; then
-    curl -sS -m 10 -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$BASE/events/$EVENT_ID" || true
+  if [[ -n "$TOKEN" ]]; then
+    for path in ${COPY_ID:+"/events/$COPY_ID"} ${EVENT_ID:+"/events/$EVENT_ID"} ${HELPER_ID:+"/users/$HELPER_ID"}; do
+      curl -sS -m 10 -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$BASE$path" || true
+    done
   fi
   rm -rf "$TMP"
 }
@@ -119,6 +123,41 @@ req 401 POST /device/checkins -H 'Authorization: Bearer x.y.z' "${JSON[@]}" -d '
 OUT="$(req 200 POST /device/checkins "${AUTH[@]}" "${JSON[@]}" -d "{\"checkins\":[$(item "$RUN-web" 2026-11-25T09:30:00-03:00)]}")"
 expect "checkin con Bearer" "$(json results.0.status <<<"$OUT")" duplicate
 ok "check-in vía Bearer admin"
+
+# Roles: un ayudante solo escanea.
+HELPER_EMAIL="smoke-$$-$(date +%s)@uct.cl"
+HELPER_ID="$(req 201 POST /users "${AUTH[@]}" "${JSON[@]}" \
+  -d "{\"email\":\"$HELPER_EMAIL\",\"name\":\"Ayudante smoke\",\"password\":\"smoke1234\",\"role\":\"ayudante\"}" | json id)"
+OUT="$(req 200 POST /auth/login "${JSON[@]}" -d "{\"email\":\"$HELPER_EMAIL\",\"password\":\"smoke1234\"}")"
+expect "rol ayudante" "$(json admin.role <<<"$OUT")" ayudante
+HELPER=(-H "Authorization: Bearer $(json token <<<"$OUT")")
+expect "me ayudante" "$(req 200 GET /auth/me "${HELPER[@]}" | json role)" ayudante
+req 200 GET /device/events "${HELPER[@]}" | grep -q "$SESSION_ID" || fail "el ayudante no ve la sesión"
+OUT="$(req 200 POST /device/checkins "${HELPER[@]}" "${JSON[@]}" -d "{\"checkins\":[$(item "$RUN-ayu" 2026-11-25T09:40:00-03:00)]}")"
+expect "checkin del ayudante" "$(json results.0.status <<<"$OUT")" duplicate
+req 403 GET /events "${HELPER[@]}" >/dev/null
+req 403 GET /users "${HELPER[@]}" >/dev/null
+req 403 POST "/events/$EVENT_ID/copy" "${HELPER[@]}" >/dev/null
+ok "ayudante: escanea y no administra"
+
+# Copia con nueva fecha de inicio (+7 días): sesiones desplazadas y sin check-ins.
+COPY_ID="$(req 201 POST "/events/$EVENT_ID/copy" "${AUTH[@]}" "${JSON[@]}" -d '{"startDate":"2026-12-02T09:00:00-03:00"}' | json id)"
+OUT="$(req 200 GET "/events/$COPY_ID" "${AUTH[@]}")"
+expect "copia nombre" "$(json name <<<"$OUT")" "Smoke test (copia)"
+expect "copia inactiva" "$(json active <<<"$OUT")" false
+expect "copia inicio" "$(json startDate <<<"$OUT")" 2026-12-02T12:00:00Z
+expect "copia término" "$(json endDate <<<"$OUT")" 2026-12-02T21:00:00Z
+expect "copia sesión inicio" "$(json sessions.0.startsAt <<<"$OUT")" 2026-12-02T12:00:00Z
+expect "copia sesión término" "$(json sessions.0.endsAt <<<"$OUT")" 2026-12-02T13:00:00Z
+expect "copia sin check-ins" "$(req 200 GET "/events/$COPY_ID/checkins?includeDuplicates=true" "${AUTH[@]}" | json total)" 0
+ok "evento copiado con fechas desplazadas"
+
+req 204 DELETE "/users/$HELPER_ID" "${AUTH[@]}" >/dev/null
+HELPER_ID=""
+req 401 GET /device/events "${HELPER[@]}" >/dev/null
+req 204 DELETE "/events/$COPY_ID" "${AUTH[@]}" >/dev/null
+COPY_ID=""
+ok "ayudante y copia eliminados"
 
 req 204 DELETE "/events/$EVENT_ID" "${AUTH[@]}" >/dev/null
 req 404 GET "/events/$EVENT_ID" "${AUTH[@]}" >/dev/null

@@ -1,4 +1,4 @@
-// Package db abre la conexión a MongoDB, crea índices y el admin inicial.
+// Package db abre la conexión a MongoDB, crea índices, migra roles y crea el admin inicial.
 package db
 
 import (
@@ -22,7 +22,7 @@ type Store struct {
 	Events   *mongo.Collection
 	Sessions *mongo.Collection
 	Checkins *mongo.Collection
-	Admins   *mongo.Collection
+	Users    *mongo.Collection // colección `admins` (nombre histórico)
 }
 
 // Connect conecta y espera (con reintentos) a que MongoDB responda.
@@ -48,7 +48,7 @@ func Connect(ctx context.Context, uri, name string) (*Store, error) {
 		Events:   d.Collection("events"),
 		Sessions: d.Collection("sessions"),
 		Checkins: d.Collection("checkins"),
-		Admins:   d.Collection("admins"),
+		Users:    d.Collection("admins"),
 	}, nil
 }
 
@@ -67,12 +67,23 @@ func (s *Store) EnsureIndexes(ctx context.Context) error {
 			{Keys: bson.D{{Key: "eventId", Value: 1}}},
 		}},
 		{s.Sessions, []mongo.IndexModel{{Keys: bson.D{{Key: "eventId", Value: 1}}}}},
-		{s.Admins, []mongo.IndexModel{{Keys: bson.D{{Key: "email", Value: 1}}, Options: unique}}},
+		{s.Users, []mongo.IndexModel{{Keys: bson.D{{Key: "email", Value: 1}}, Options: unique}}},
 	}
 	for _, i := range indexes {
 		if _, err := i.c.Indexes().CreateMany(ctx, i.m); err != nil {
 			return fmt.Errorf("índices %s: %w", i.c.Name(), err)
 		}
+	}
+	return nil
+}
+
+// MigrateRoles marca como admin a los usuarios anteriores a los roles (idempotente).
+func (s *Store) MigrateRoles(ctx context.Context) error {
+	_, err := s.Users.UpdateMany(ctx,
+		bson.M{"role": bson.M{"$in": bson.A{nil, ""}}},
+		bson.M{"$set": bson.M{"role": models.RoleAdmin}})
+	if err != nil {
+		return fmt.Errorf("migración de roles: %w", err)
 	}
 	return nil
 }
@@ -83,7 +94,7 @@ func (s *Store) EnsureAdmin(ctx context.Context, email, password string) error {
 	if email == "" || password == "" {
 		return nil
 	}
-	err := s.Admins.FindOne(ctx, bson.M{"email": email}).Err()
+	err := s.Users.FindOne(ctx, bson.M{"email": email}).Err()
 	if err == nil {
 		return nil
 	}
@@ -94,8 +105,8 @@ func (s *Store) EnsureAdmin(ctx context.Context, email, password string) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.Admins.InsertOne(ctx, models.Admin{
-		ID: bson.NewObjectID(), Email: email, Name: "Administrador",
+	_, err = s.Users.InsertOne(ctx, models.User{
+		ID: bson.NewObjectID(), Email: email, Name: "Administrador", Role: models.RoleAdmin,
 		PasswordHash: string(hash), CreatedAt: models.Now(),
 	})
 	if mongo.IsDuplicateKeyError(err) {

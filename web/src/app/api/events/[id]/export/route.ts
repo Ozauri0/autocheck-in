@@ -9,6 +9,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const sessionId = request.nextUrl.searchParams.get("sessionId") ?? "";
 
   try {
+    if ((await api.me()).role !== "admin") {
+      return Response.json({ error: "No tiene permisos para esta acción" }, { status: 403 });
+    }
     const upstream = await api.exportXlsx(id, sessionId);
     const headers = new Headers({
       "Content-Type": upstream.headers.get("content-type") ?? XLSX,

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,20 +28,37 @@ func TestToken(t *testing.T) {
 
 func TestMiddleware(t *testing.T) {
 	ok := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
-	tok, _ := NewToken("s", "abc", time.Now())
+	lookup := func(_ context.Context, id string) (string, error) {
+		if id == "roto" {
+			return "", errors.New("sin base de datos")
+		}
+		return map[string]string{"jefa": "admin", "ayu": "ayudante"}[id], nil
+	}
+	bearer := func(id string) string {
+		tok, _ := NewToken("s", id, time.Now())
+		return "Bearer " + tok
+	}
+	admin := RequireRole("s", lookup, "admin")(ok)
+	device := RequireDevice("k", "s", lookup)(ok)
 	tests := []struct {
 		name, header, value string
 		h                   http.Handler
 		want                int
 	}{
-		{"admin ok", "Authorization", "Bearer " + tok, RequireAdmin("s")(ok), 200},
-		{"admin sin token", "Authorization", "", RequireAdmin("s")(ok), 401},
-		{"admin basura", "Authorization", "Bearer x.y.z", RequireAdmin("s")(ok), 401},
-		{"device ok", "X-Device-Key", "k", RequireDevice("k", "s")(ok), 200},
-		{"device mala", "X-Device-Key", "z", RequireDevice("k", "s")(ok), 401},
-		{"device sin config", "X-Device-Key", "", RequireDevice("", "s")(ok), 401},
-		{"device con bearer admin", "Authorization", "Bearer " + tok, RequireDevice("k", "s")(ok), 200},
-		{"device con bearer inválido", "Authorization", "Bearer x.y.z", RequireDevice("k", "s")(ok), 401},
+		{"admin ok", "Authorization", bearer("jefa"), admin, 200},
+		{"admin sin token", "Authorization", "", admin, 401},
+		{"admin basura", "Authorization", "Bearer x.y.z", admin, 401},
+		{"admin con ayudante", "Authorization", bearer("ayu"), admin, 403},
+		{"admin con usuario borrado", "Authorization", bearer("nadie"), admin, 401},
+		{"admin con device key", "X-Device-Key", "k", admin, 401},
+		{"fallo al consultar", "Authorization", bearer("roto"), admin, 500},
+		{"device ok", "X-Device-Key", "k", device, 200},
+		{"device mala", "X-Device-Key", "z", device, 401},
+		{"device sin config", "X-Device-Key", "", RequireDevice("", "s", lookup)(ok), 401},
+		{"device con bearer admin", "Authorization", bearer("jefa"), device, 200},
+		{"device con bearer ayudante", "Authorization", bearer("ayu"), device, 200},
+		{"device con usuario borrado", "Authorization", bearer("nadie"), device, 401},
+		{"device con bearer inválido", "Authorization", "Bearer x.y.z", device, 401},
 	}
 	for _, tc := range tests {
 		r := httptest.NewRequest(http.MethodGet, "/", nil)

@@ -25,6 +25,7 @@ type api struct {
 	t     *testing.T
 	h     http.Handler
 	token string
+	store *db.Store
 }
 
 func (a *api) do(method, path string, body any, want int) map[string]any {
@@ -53,14 +54,11 @@ func (a *api) raw(method, path string, body any) *httptest.ResponseRecorder {
 	return w
 }
 
-// Los endpoints de dispositivo aceptan X-Device-Key o Bearer admin. Se usa un
-// cuerpo inválido: 400 significa que la autenticación pasó.
+// Los endpoints de dispositivo aceptan X-Device-Key sin consultar la base. Se usa
+// un cuerpo inválido: 400 significa que la autenticación pasó. Un Bearer necesita
+// la base (rol vigente): se prueba en TestRoles y en el paquete auth.
 func TestDeviceAuth(t *testing.T) {
 	h := New(testCfg, nil)
-	token, err := auth.NewToken(testCfg.JWTSecret, "admin", time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
 	expired, _ := auth.NewToken(testCfg.JWTSecret, "admin", time.Now().Add(-13*time.Hour))
 	tests := []struct {
 		name, key, bearer string
@@ -68,30 +66,22 @@ func TestDeviceAuth(t *testing.T) {
 	}{
 		{"sin credenciales", "", "", 401},
 		{"device key", "k", "", 400},
-		{"bearer admin", "", token, 400},
-		{"key mala y bearer válido", "mala", token, 400},
 		{"key válida y bearer malo", "k", "x.y.z", 400},
 		{"key mala", "mala", "", 401},
 		{"bearer expirado", "", expired, 401},
 	}
 	for _, tc := range tests {
-		for _, route := range [][2]string{{"POST", "/device/checkins"}, {"GET", "/device/events"}} {
-			// Sin base de datos, /device/events solo se prueba cuando debe rechazar.
-			if route[0] == "GET" && tc.want != 401 {
-				continue
-			}
-			r := httptest.NewRequest(route[0], "/api/v1"+route[1], strings.NewReader("{"))
-			if tc.key != "" {
-				r.Header.Set("X-Device-Key", tc.key)
-			}
-			if tc.bearer != "" {
-				r.Header.Set("Authorization", "Bearer "+tc.bearer)
-			}
-			w := httptest.NewRecorder()
-			h.ServeHTTP(w, r)
-			if w.Code != tc.want {
-				t.Errorf("%s %s: status %d, want %d", tc.name, route[1], w.Code, tc.want)
-			}
+		r := httptest.NewRequest("POST", "/api/v1/device/checkins", strings.NewReader("{"))
+		if tc.key != "" {
+			r.Header.Set("X-Device-Key", tc.key)
+		}
+		if tc.bearer != "" {
+			r.Header.Set("Authorization", "Bearer "+tc.bearer)
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Code != tc.want {
+			t.Errorf("%s: status %d, want %d", tc.name, w.Code, tc.want)
 		}
 	}
 }
@@ -157,7 +147,7 @@ func newAPI(t *testing.T) *api {
 	}
 	cfg := testCfg
 	cfg.Location = time.UTC
-	a := &api{t: t, h: New(cfg, store)}
+	a := &api{t: t, h: New(cfg, store), store: store}
 	a.do("POST", "/auth/login", map[string]string{"email": "admin@uct.cl", "password": "mala"}, 401)
 	login := a.do("POST", "/auth/login", map[string]string{"email": "admin@uct.cl", "password": "secreto"}, 200)
 	a.token = login["token"].(string)

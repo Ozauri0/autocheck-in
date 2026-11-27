@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -30,8 +31,8 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "email y password son obligatorios")
 		return
 	}
-	var a models.Admin
-	err := s.store.Admins.FindOne(r.Context(), bson.M{"email": email}).Decode(&a)
+	var u models.User
+	err := s.store.Users.FindOne(r.Context(), bson.M{"email": email}).Decode(&u)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		fail(w, r, err)
 		return
@@ -42,26 +43,21 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 401, "credenciales inválidas")
 		return
 	}
-	if bcrypt.CompareHashAndPassword([]byte(a.PasswordHash), []byte(in.Password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(in.Password)) != nil {
 		writeError(w, 401, "credenciales inválidas")
 		return
 	}
-	token, err := auth.NewToken(s.cfg.JWTSecret, a.ID.Hex(), time.Now())
+	token, err := auth.NewToken(s.cfg.JWTSecret, u.ID.Hex(), time.Now())
 	if err != nil {
 		fail(w, r, err)
 		return
 	}
-	writeJSON(w, 200, map[string]any{"token": token, "admin": a})
+	u.Normalize()
+	writeJSON(w, 200, map[string]any{"token": token, "admin": u})
 }
 
 func (s *Server) me(w http.ResponseWriter, r *http.Request) {
-	id, err := bson.ObjectIDFromHex(auth.AdminID(r.Context()))
-	if err != nil {
-		writeError(w, 401, "no autorizado")
-		return
-	}
-	var a models.Admin
-	err = s.store.Admins.FindOne(r.Context(), bson.M{"_id": id}).Decode(&a)
+	u, err := s.findUser(r.Context(), auth.UserID(r.Context()))
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		writeError(w, 401, "no autorizado")
 		return
@@ -70,5 +66,30 @@ func (s *Server) me(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, err)
 		return
 	}
-	writeJSON(w, 200, a)
+	writeJSON(w, 200, u)
+}
+
+// findUser busca por id hexadecimal; un id mal formado equivale a no encontrado.
+func (s *Server) findUser(ctx context.Context, hex string) (models.User, error) {
+	var u models.User
+	id, err := bson.ObjectIDFromHex(hex)
+	if err != nil || s.store == nil {
+		return u, mongo.ErrNoDocuments
+	}
+	err = s.store.Users.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
+	u.Normalize()
+	return u, err
+}
+
+// roleOf alimenta los middlewares: el rol se consulta en cada petición, así un
+// cambio de rol o un borrado surten efecto de inmediato. "" = usuario inexistente.
+func (s *Server) roleOf(ctx context.Context, id string) (string, error) {
+	u, err := s.findUser(ctx, id)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return u.Role, nil
 }

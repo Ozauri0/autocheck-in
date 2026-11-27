@@ -6,6 +6,7 @@ import { Alert, Badge, button, card, EmptyState, td, th, thead } from "@/compone
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/dates";
 import { load } from "@/lib/load";
+import { requireAdmin } from "@/lib/roles";
 
 export const metadata: Metadata = { title: "Eventos" };
 
@@ -14,6 +15,7 @@ export default async function EventsPage({
 }: {
   searchParams: Promise<{ inactivos?: string }>;
 }) {
+  await requireAdmin();
   const showInactive = (await searchParams).inactivos !== "0";
   const { data: events, error } = await load(() => api.listEvents(showInactive));
 

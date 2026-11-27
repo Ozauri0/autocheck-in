@@ -43,7 +43,7 @@ export function ResultCard({ result, onClose }: { result: Result; onClose: () =>
           {attendee.rut && <span className="block text-xl">RUT {attendee.rut}</span>}
           {attendee.email && <span className="block text-lg">{attendee.email}</span>}
           <span className="block text-slate-600">{formatTimestamp(result.scannedAt)}</span>
-          <span className="block pt-2 text-sm text-slate-500">Toque para continuar</span>
+          <span className="block pt-2 text-sm text-slate-500">Se cierra solo · toque para cerrar antes</span>
         </span>
       </button>
     </div>

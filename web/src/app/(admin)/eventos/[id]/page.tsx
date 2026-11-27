@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AttendeesPanel } from "@/components/attendees-panel";
+import { CopyEvent } from "@/components/copy-event";
 import { SessionsPanel } from "@/components/sessions-panel";
 import { StatsPanel } from "@/components/stats-panel";
 import { Alert, Badge, button, Loading } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatRange } from "@/lib/dates";
 import { load } from "@/lib/load";
+import { requireAdmin } from "@/lib/roles";
 
 export const metadata: Metadata = { title: "Detalle de evento" };
 
@@ -31,6 +33,7 @@ export default async function EventPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<SearchParams>;
 }) {
+  await requireAdmin();
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const tab = TABS.find((t) => t.key === first(query.tab))?.key ?? "sesiones";
   const { data: event, error } = await load(() => api.getEvent(id));
@@ -88,6 +91,7 @@ export default async function EventPage({
             <Pencil aria-hidden className="size-4" />
             Editar
           </Link>
+          <CopyEvent id={event.id} name={event.name} />
           {/* Enlace nativo: es una descarga, no una navegación del router. */}
           <a href={`/api/events/${event.id}/export`} className={button()}>
             <Download aria-hidden className="size-4" />

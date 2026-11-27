@@ -79,7 +79,7 @@ En Linux la IP LAN se ve con `ip -4 addr`. La tablet y el PC deben estar en la m
 
 ## Escaneo desde el navegador
 
-Respaldo de la app Android cuando una tablet falla: el ayudante entra al panel desde su celular o notebook, abre **Escanear QR** (`/escanear`, mismo login admin), elige evento y sesión y lee el QR del asistente. Los registros aparecen en la pestaña **Asistentes** con el nombre que se le dio al dispositivo. Sin conexión quedan guardados en el navegador y se envían al volver la red (la página debe haberse abierto con conexión y no recargarse mientras no la haya).
+Respaldo de la app Android cuando una tablet falla: el ayudante entra al panel desde su celular o notebook con su usuario, abre **Escanear QR** (`/escanear`), elige evento y sesión y lee el QR del asistente. Los registros aparecen en la pestaña **Asistentes** con el nombre que se le dio al dispositivo. Sin conexión quedan guardados en el navegador y se envían al volver la red (la página debe haberse abierto con conexión y no recargarse mientras no la haya).
 
 Los navegadores solo permiten usar la cámara en un contexto seguro: **HTTPS**, o `http://localhost` en el mismo equipo. Abrir `http://<IP LAN>:3000` desde un celular no sirve. Para la red local, compose incluye Caddy con un certificado autofirmado:
 
@@ -94,7 +94,11 @@ COOKIE_SECURE=true HTTPS_HOST=192.168.1.10 docker compose --profile https up -d 
 
 En producción use un dominio con certificado real (en el `Caddyfile`, el dominio en lugar de `:443` y sin `tls internal`; puertos 80 y 443 publicados) y `COOKIE_SECURE=true`.
 
-Quien escanea usa la cuenta de administrador, con acceso a todo el panel: entréguela solo a personas de confianza.
+### Usuarios y roles
+
+En **Usuarios** (`/usuarios`) un administrador crea las cuentas. El rol `ayudante` solo puede escanear: al ingresar va directo a `/escanear` y no ve el resto del panel. El rol `admin` puede todo. Cree una cuenta de ayudante para quien escanea en lugar de compartir la de administrador. Si cambia a un ayudante a administrador, debe cerrar sesión y volver a entrar.
+
+Un evento se puede duplicar con **Copiar** (lista o detalle): copia sus sesiones, sin registros de asistencia, y queda inactivo.
 
 ## Formato del QR
 

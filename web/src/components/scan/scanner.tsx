@@ -9,9 +9,10 @@ import { ResultCard, type Outcome, type Result } from "./result-card";
 import { SyncStatus } from "./sync-status";
 
 const SAME_QR_MS = 5000;
-const CARD_MS = 4000;
-/** Tiempo que la tarjeta espera al servidor antes de darlo por "se enviará luego". */
-const SEND_WAIT_MS = 2500;
+/** El cartel se cierra solo a este tiempo de aparecer, responda o no el servidor. */
+const CARD_MS = 2000;
+/** Sin respuesta tras este tiempo, el cartel pasa a "se enviará luego". */
+const SEND_WAIT_MS = 1000;
 const FRAME_MS = 200;
 
 type Facing = "environment" | "user";
@@ -121,7 +122,11 @@ export function Scanner({
     });
     const base = { clientId: record.clientId, raw, scannedAt: record.scannedAt };
     shown.current = record.clientId;
-    setResult({ ...base, outcome: { kind: "sending" } });
+    // Una repetición ya se conoce localmente; el resto espera brevemente al servidor.
+    setResult({ ...base, outcome: { kind: repeated ? "duplicate" : "sending" } });
+    // Se programa antes de enviar: no depende de la respuesta ni se reinicia con ella.
+    clearTimeout(timer.current);
+    timer.current = setTimeout(close, CARD_MS);
 
     const show = (outcome: Outcome) => {
       // La tarjeta ya se cerró: no se vuelve a abrir.
@@ -131,16 +136,14 @@ export function Scanner({
         navigator.vibrate?.([200, 100, 200]);
       }
     };
-    const request = send([record]).then((response) => toOutcome(response, record, repeated));
-    let wait: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<null>((resolve) => {
-      wait = setTimeout(resolve, SEND_WAIT_MS, null);
-    });
-    const first = await Promise.race([request, timeout]);
+    let answered = false;
+    const wait = setTimeout(() => {
+      if (!answered && !repeated) show({ kind: "offline" });
+    }, SEND_WAIT_MS);
+    const response = await send([record]);
+    answered = true;
     clearTimeout(wait);
-    show(first ?? { kind: repeated ? "duplicate" : "offline" });
-    if (!first) void request.then(show);
-    if (shown.current === record.clientId) timer.current = setTimeout(close, CARD_MS);
+    show(toOutcome(response, record, repeated));
   };
 
   const onFrame = useEffectEvent((raw: string) => void onScan(raw));

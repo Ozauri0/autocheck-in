@@ -1,7 +1,6 @@
 import "server-only";
 import { getToken } from "./session";
 import type {
-  Admin,
   CheckinInput,
   CheckinPage,
   CheckinResult,
@@ -12,6 +11,8 @@ import type {
   Session,
   SessionInput,
   Stats,
+  User,
+  UserInput,
 } from "./types";
 
 export type * from "./types";
@@ -83,14 +84,20 @@ async function json<T>(path: string, opts?: RequestOptions): Promise<T> {
 
 export const api = {
   login: (email: string, password: string) =>
-    json<{ token: string; admin: Admin }>("/auth/login", {
+    json<{ token: string; admin: User }>("/auth/login", {
       method: "POST",
       body: { email, password },
       auth: false,
     }),
-  me: () => json<Admin>("/auth/me"),
+  me: () => json<User>("/auth/me"),
 
-  // Endpoints de dispositivo: aceptan el Bearer del admin (escáner web).
+  listUsers: async () => (await json<User[] | null>("/users")) ?? [],
+  createUser: (input: UserInput) => json<User>("/users", { method: "POST", body: input }),
+  updateUser: (id: string, input: UserInput) =>
+    json<User>(`/users/${seg(id)}`, { method: "PUT", body: input }),
+  deleteUser: (id: string) => json<void>(`/users/${seg(id)}`, { method: "DELETE" }),
+
+  // Endpoints de dispositivo: aceptan el Bearer de cualquier usuario (escáner web).
   deviceEvents: async () => (await json<EventDetail[] | null>("/device/events")) ?? [],
   deviceCheckins: (checkins: CheckinInput[]) =>
     json<{ results: CheckinResult[] }>("/device/checkins", { method: "POST", body: { checkins } }),
@@ -104,6 +111,9 @@ export const api = {
   setEventActive: (id: string, active: boolean) =>
     json<Event>(`/events/${seg(id)}/active`, { method: "PATCH", body: { active } }),
   deleteEvent: (id: string) => json<void>(`/events/${seg(id)}`, { method: "DELETE" }),
+
+  copyEvent: (id: string, input: { name: string; startDate?: string }) =>
+    json<Event>(`/events/${seg(id)}/copy`, { method: "POST", body: input }),
 
   createSession: (eventId: string, input: SessionInput) =>
     json<Session>(`/events/${seg(eventId)}/sessions`, { method: "POST", body: input }),

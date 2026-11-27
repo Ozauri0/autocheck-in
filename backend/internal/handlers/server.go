@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -19,6 +20,7 @@ import (
 	"github.com/uct/autocheckin/backend/internal/checkin"
 	"github.com/uct/autocheckin/backend/internal/config"
 	"github.com/uct/autocheckin/backend/internal/db"
+	"github.com/uct/autocheckin/backend/internal/models"
 )
 
 const maxBody = 8 << 20
@@ -27,6 +29,8 @@ type Server struct {
 	cfg      config.Config
 	store    *db.Store
 	recorder *checkin.Recorder
+	// users serializa los cambios de usuarios para no quedar sin admins (una sola instancia).
+	users sync.Mutex
 }
 
 // New construye el router completo de la API.
@@ -54,15 +58,22 @@ func New(cfg config.Config, store *db.Store) http.Handler {
 		})
 		r.Post("/auth/login", s.login)
 
+		r.With(auth.RequireRole(cfg.JWTSecret, s.roleOf, models.RoleAdmin, models.RoleAyudante)).
+			Get("/auth/me", s.me)
+
 		r.Group(func(r chi.Router) {
-			r.Use(auth.RequireAdmin(cfg.JWTSecret))
-			r.Get("/auth/me", s.me)
+			r.Use(auth.RequireRole(cfg.JWTSecret, s.roleOf, models.RoleAdmin))
+			r.Get("/users", s.listUsers)
+			r.Post("/users", s.createUser)
+			r.Put("/users/{id}", s.updateUser)
+			r.Delete("/users/{id}", s.deleteUser)
 			r.Get("/events", s.listEvents)
 			r.Post("/events", s.createEvent)
 			r.Get("/events/{id}", s.getEvent)
 			r.Put("/events/{id}", s.updateEvent)
 			r.Patch("/events/{id}/active", s.setEventActive)
 			r.Delete("/events/{id}", s.deleteEvent)
+			r.Post("/events/{id}/copy", s.copyEvent)
 			r.Post("/events/{id}/sessions", s.createSession)
 			r.Put("/sessions/{id}", s.updateSession)
 			r.Delete("/sessions/{id}", s.deleteSession)
@@ -72,7 +83,7 @@ func New(cfg config.Config, store *db.Store) http.Handler {
 		})
 
 		r.Group(func(r chi.Router) {
-			r.Use(auth.RequireDevice(cfg.DeviceAPIKey, cfg.JWTSecret))
+			r.Use(auth.RequireDevice(cfg.DeviceAPIKey, cfg.JWTSecret, s.roleOf))
 			r.Get("/device/events", s.deviceEvents)
 			r.Post("/device/checkins", s.deviceCheckins)
 		})

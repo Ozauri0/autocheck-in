@@ -66,10 +66,21 @@ export interface Stats {
   sessions: { sessionId: string; name: string; room: string; count: number }[] | null;
 }
 
-export interface Admin {
+export type Role = "admin" | "ayudante";
+
+export interface User {
   id: string;
   email: string;
   name: string;
+  role: Role;
+}
+
+export interface UserInput {
+  email: string;
+  name: string;
+  role: Role;
+  /** Vacía al editar: no se cambia. */
+  password?: string;
 }
 
 export type EventInput = Pick<

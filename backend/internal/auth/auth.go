@@ -1,25 +1,29 @@
-// Package auth emite y valida JWT de administradores y la clave de dispositivo.
+// Package auth emite y valida JWT de usuarios, aplica roles y valida la clave de dispositivo.
 package auth
 
 import (
 	"context"
 	"crypto/sha256"
 	"crypto/subtle"
+	"log"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/uct/autocheckin/backend/internal/models"
 )
 
 const TokenTTL = 12 * time.Hour
 
 type ctxKey struct{}
 
-// NewToken firma un JWT HS256 con el id del admin como subject.
-func NewToken(secret, adminID string, now time.Time) (string, error) {
+// NewToken firma un JWT HS256 con el id del usuario como subject.
+func NewToken(secret, userID string, now time.Time) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject:   adminID,
+		Subject:   userID,
 		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(now.Add(TokenTTL)),
 	}).SignedString([]byte(secret))
@@ -38,46 +42,62 @@ func ParseToken(secret, token string) (string, error) {
 	return claims.Subject, nil
 }
 
-// AdminID devuelve el id del admin autenticado.
-func AdminID(ctx context.Context) string {
+// RoleLookup devuelve el rol actual de un usuario, o "" si no existe.
+type RoleLookup func(ctx context.Context, userID string) (string, error)
+
+// UserID devuelve el id del usuario autenticado.
+func UserID(ctx context.Context) string {
 	id, _ := ctx.Value(ctxKey{}).(string)
 	return id
 }
 
-func unauthorized(w http.ResponseWriter) {
+func deny(w http.ResponseWriter, status int, msg string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusUnauthorized)
-	_, _ = w.Write([]byte(`{"error":"no autorizado"}` + "\n"))
+	w.WriteHeader(status)
+	_, _ = w.Write([]byte(`{"error":"` + msg + `"}` + "\n"))
 }
 
-// adminFrom devuelve el id del admin de un `Authorization: Bearer <token>` válido.
-func adminFrom(r *http.Request, secret string) (string, bool) {
+// authenticate exige un `Authorization: Bearer <token>` válido de un usuario que
+// aún existe y cuyo rol esté entre los permitidos (401 / 403).
+func authenticate(w http.ResponseWriter, r *http.Request, secret string, lookup RoleLookup, next http.Handler, roles []string) {
 	token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if !ok {
-		return "", false
+		deny(w, 401, "no autorizado")
+		return
 	}
 	id, err := ParseToken(secret, token)
-	return id, err == nil && id != ""
+	if err != nil || id == "" {
+		deny(w, 401, "no autorizado")
+		return
+	}
+	role, err := lookup(r.Context(), id)
+	switch {
+	case err != nil:
+		log.Printf("auth: %v", err)
+		deny(w, 500, "error interno")
+	case role == "":
+		deny(w, 401, "no autorizado")
+	case !slices.Contains(roles, role):
+		deny(w, 403, "no tiene permisos para esta acción")
+	default:
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, id)))
+	}
 }
 
-// RequireAdmin exige `Authorization: Bearer <token>`.
-func RequireAdmin(secret string) func(http.Handler) http.Handler {
+// RequireRole exige el Bearer de un usuario con alguno de los roles dados.
+func RequireRole(secret string, lookup RoleLookup, roles ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			id, ok := adminFrom(r, secret)
-			if !ok {
-				unauthorized(w)
-				return
-			}
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, id)))
+			authenticate(w, r, secret, lookup, next, roles)
 		})
 	}
 }
 
 // RequireDevice exige el header X-Device-Key (comparación en tiempo constante)
-// o, como alternativa, un JWT de admin válido (escáner web del panel).
-func RequireDevice(key, secret string) func(http.Handler) http.Handler {
+// o, como alternativa, el Bearer de cualquier usuario (escáner web del panel).
+func RequireDevice(key, secret string, lookup RoleLookup) func(http.Handler) http.Handler {
 	want := sha256.Sum256([]byte(key))
+	roles := []string{models.RoleAdmin, models.RoleAyudante}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			got := sha256.Sum256([]byte(r.Header.Get("X-Device-Key")))
@@ -85,11 +105,7 @@ func RequireDevice(key, secret string) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			if _, ok := adminFrom(r, secret); ok {
-				next.ServeHTTP(w, r)
-				return
-			}
-			unauthorized(w)
+			authenticate(w, r, secret, lookup, next, roles)
 		})
 	}
 }

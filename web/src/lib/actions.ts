@@ -6,8 +6,8 @@ import { api, ApiError } from "./api";
 import { fromLocalInput } from "./dates";
 import type { FormState } from "./forms";
 import { nextPath } from "./next-path";
-import { clearToken, setToken } from "./session";
-import type { EventInput, SessionInput } from "./types";
+import { clearToken, setSession } from "./session";
+import type { EventInput, SessionInput, UserInput } from "./types";
 
 function text(form: FormData, key: string): string {
   const value = form.get(key);
@@ -32,6 +32,17 @@ async function failure(e: unknown): Promise<string> {
   return e.message;
 }
 
+const FORBIDDEN = "No tiene permisos para esta acción.";
+
+/** Mensaje de rechazo si quien invoca una acción de administración no es admin. */
+async function denied(): Promise<string | undefined> {
+  try {
+    return (await api.me()).role === "admin" ? undefined : FORBIDDEN;
+  } catch (e) {
+    return failure(e);
+  }
+}
+
 export async function loginAction(_prev: FormState, form: FormData): Promise<FormState> {
   const email = text(form, "email");
   const password = form.get("password");
@@ -39,9 +50,11 @@ export async function loginAction(_prev: FormState, form: FormData): Promise<For
   if (!email || typeof password !== "string" || !password) {
     return { message: "Ingrese su email y contraseña.", values };
   }
+  let role;
   try {
-    const { token } = await api.login(email, password);
-    await setToken(token);
+    const { token, admin } = await api.login(email, password);
+    role = admin.role;
+    await setSession(token, role);
   } catch (e) {
     if (!(e instanceof ApiError)) throw e;
     return {
@@ -49,7 +62,7 @@ export async function loginAction(_prev: FormState, form: FormData): Promise<For
       values,
     };
   }
-  redirect(nextPath(form.get("next")));
+  redirect(role === "ayudante" ? "/escanear" : nextPath(form.get("next")));
 }
 
 export async function logoutAction() {
@@ -78,6 +91,8 @@ export async function saveEventAction(_prev: FormState, form: FormData): Promise
   // El id viaja en el formulario y no con .bind(): en Next 16.4, enviar antes de la hidratación
   // una acción enlazada dentro de useActionState deja el render del servidor en un bucle.
   const id = text(form, "id");
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden, values: formValues(form) };
   const errors: Record<string, string> = {};
   const name = text(form, "name");
   if (!name) errors.name = "El nombre es obligatorio.";
@@ -105,6 +120,8 @@ export async function saveEventAction(_prev: FormState, form: FormData): Promise
 }
 
 export async function toggleEventAction(id: string, active: boolean): Promise<FormState> {
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden };
   try {
     await api.setEventActive(id, active);
   } catch (e) {
@@ -115,6 +132,8 @@ export async function toggleEventAction(id: string, active: boolean): Promise<Fo
 }
 
 export async function deleteEventAction(id: string): Promise<FormState> {
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden };
   try {
     await api.deleteEvent(id);
   } catch (e) {
@@ -130,6 +149,8 @@ export async function saveSessionAction(
   _prev: FormState,
   form: FormData,
 ): Promise<FormState> {
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden, values: formValues(form) };
   const errors: Record<string, string> = {};
   const name = text(form, "name");
   if (!name) errors.name = "El nombre es obligatorio.";
@@ -159,11 +180,93 @@ export async function saveSessionAction(
 }
 
 export async function deleteSessionAction(id: string): Promise<FormState> {
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden };
   try {
     await api.deleteSession(id);
   } catch (e) {
     return { message: await failure(e) };
   }
   revalidatePath("/eventos", "layout");
+  return { ok: true };
+}
+
+export async function copyEventAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const values = formValues(form);
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden, values };
+
+  const name = text(form, "name");
+  const start = text(form, "startDate");
+  const startDate = start ? fromLocalInput(start) : null;
+  const errors: Record<string, string> = {};
+  if (!name) errors.name = "El nombre es obligatorio.";
+  if (start && !startDate) errors.startDate = "Fecha y hora no válidas.";
+  if (Object.keys(errors).length) return { errors, values };
+
+  let copyId: string;
+  try {
+    copyId = (await api.copyEvent(text(form, "id"), { name, startDate: startDate ?? undefined })).id;
+  } catch (e) {
+    return { message: await failure(e), values };
+  }
+  revalidatePath("/eventos", "layout");
+  redirect(`/eventos/${copyId}`);
+}
+
+/** Mensajes en español para los errores de la API de usuarios. */
+const USER_ERRORS: Record<string, string> = {
+  "name es obligatorio (máximo 200 caracteres)": "El nombre es obligatorio (máximo 200 caracteres).",
+  'role debe ser "admin" o "ayudante"': "Seleccione un rol válido.",
+  "no encontrado": "El usuario ya no existe. Recargue la página.",
+};
+
+async function userFailure(e: unknown): Promise<string> {
+  const message = await failure(e);
+  return USER_ERRORS[message] ?? message.charAt(0).toUpperCase() + message.slice(1);
+}
+
+export async function saveUserAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const id = text(form, "id");
+  // La contraseña no se recorta ni se devuelve al formulario.
+  const password = String(form.get("password") ?? "");
+  const values = formValues(form);
+  delete values.password;
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden, values };
+
+  const input: UserInput = {
+    email: text(form, "email"),
+    name: text(form, "name"),
+    role: text(form, "role") === "admin" ? "admin" : "ayudante",
+    password: password || undefined,
+  };
+  const errors: Record<string, string> = {};
+  if (!input.name) errors.name = "El nombre es obligatorio.";
+  if (!input.email.includes("@")) errors.email = "Ingrese un email válido.";
+  if ((!id || password) && [...password].length < 4) {
+    errors.password = "La contraseña debe tener al menos 4 caracteres.";
+  }
+  if (Object.keys(errors).length) return { errors, values };
+
+  try {
+    if (id) await api.updateUser(id, input);
+    else await api.createUser(input);
+  } catch (e) {
+    return { message: await userFailure(e), values };
+  }
+  revalidatePath("/usuarios");
+  return { ok: true };
+}
+
+export async function deleteUserAction(id: string): Promise<FormState> {
+  const forbidden = await denied();
+  if (forbidden) return { message: forbidden };
+  try {
+    await api.deleteUser(id);
+  } catch (e) {
+    return { message: await userFailure(e) };
+  }
+  revalidatePath("/usuarios");
   return { ok: true };
 }
