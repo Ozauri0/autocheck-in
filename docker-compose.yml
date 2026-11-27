@@ -24,8 +24,8 @@ services:
       MONGO_DB: autocheckin
       JWT_SECRET: dev-secret-change-me
       DEVICE_API_KEY: dev-device-key
-      ADMIN_EMAIL: admin@uct.cl
-      ADMIN_PASSWORD: admin1234
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@uct.cl}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
       CORS_ORIGINS: http://localhost:3000
       TZ_NAME: America/Santiago
     depends_on:
