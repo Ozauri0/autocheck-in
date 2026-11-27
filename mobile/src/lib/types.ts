@@ -58,5 +58,4 @@ export interface Settings extends ServerConfig {
   deviceName: string;
   deviceId: string;
   camera: 'front' | 'back';
-  cardSeconds: number;
 }

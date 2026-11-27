@@ -1,11 +1,12 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useIsFocused, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Result, ResultCard } from '../components/ResultCard';
 import { Button, colors, StatusBadge, styles as ui } from '../components/ui';
+import { createCardSession } from '../lib/cardSession';
 import { eventsStore } from '../lib/events';
 import { createRecord, sendRecord } from '../lib/scan';
 import { settingsStore } from '../lib/settings';
@@ -27,22 +28,31 @@ export default function ScannerScreen() {
   // Refs: la cámara dispara muchas veces por segundo, antes de que React re-renderice.
   const busy = useRef(false);
   const seen = useRef(new Map<string, number>());
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const shown = useRef<string | undefined>(undefined);
+  const mounted = useRef(true);
+
+  // La tarjeta aparece al leer el QR y se cierra sola a los 2 s, responda o no el servidor.
+  const [card] = useState(() =>
+    createCardSession<Result>({
+      onShow: (value) => setResult(value),
+      onHide: () => {
+        busy.current = false;
+        setResult(null);
+      },
+    }),
+  );
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      card.dispose();
+    };
+  }, [card]);
 
   const event = events.find((e) => e.id === eventId);
   const session = event?.sessions.find((s) => s.id === sessionId);
   // Se conservan aunque un refresco quite el evento mientras se escanea.
   const [target] = useState(() => (event && session ? { event, session } : null));
-
-  const close = useCallback(() => {
-    clearTimeout(timer.current);
-    shown.current = undefined;
-    setResult(null);
-    busy.current = false;
-  }, []);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
 
   const onScan = async (raw: string) => {
     const now = Date.now();
@@ -55,27 +65,22 @@ export default function ScannerScreen() {
 
     try {
       const { record, excelError } = await createRecord(target.event, target.session, raw);
-      const card: Result = {
+      // Si la pantalla se cerró mientras se guardaba, el registro queda en cola para sincronizar.
+      if (!mounted.current) return;
+      const base = {
         clientId: record.clientId,
         raw,
         scannedAt: record.scannedAt,
-        outcome: { kind: 'sending' },
         warning: excelError && `No se pudo escribir el Excel: ${excelError}`,
       };
-      shown.current = record.clientId;
-      setResult(card);
-      const outcome = await sendRecord(record, (late) =>
-        setResult((current) =>
-          current?.clientId === record.clientId ? { ...current, outcome: late } : current,
-        ),
-      );
-      // La tarjeta ya se cerró con un toque: no volver a abrirla.
-      if (shown.current !== record.clientId) return;
-      setResult({ ...card, outcome });
-      if (outcome.kind === 'duplicate' || outcome.kind === 'error') {
-        Vibration.vibrate([0, 200, 100, 200]);
-      }
-      timer.current = setTimeout(close, settings.cardSeconds * 1000);
+      card.open(record.clientId, { ...base, outcome: { kind: 'sending' } });
+      sendRecord(record).then((outcome) => {
+        // Si ya se cerró, no hay tarjeta que actualizar ni que vibrar.
+        const updated = card.update(record.clientId, { ...base, outcome });
+        if (updated && (outcome.kind === 'duplicate' || outcome.kind === 'error')) {
+          Vibration.vibrate([0, 200, 100, 200]);
+        }
+      });
     } catch (e) {
       // No quedó guardado: se permite reintentar de inmediato.
       seen.current.delete(raw);
@@ -150,7 +155,7 @@ export default function ScannerScreen() {
           />
         </View>
       </View>
-      {result && <ResultCard result={result} onClose={close} />}
+      {result && <ResultCard result={result} onClose={card.close} />}
     </View>
   );
 }

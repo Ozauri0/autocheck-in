@@ -11,11 +11,12 @@ export const settingsStore = createStore<Settings>({
   deviceName: 'Tablet',
   deviceId: '',
   camera: 'front',
-  cardSeconds: 4,
 });
 
 export async function loadSettings(): Promise<void> {
   const saved = JSON.parse((await AsyncStorage.getItem(KEY)) ?? '{}');
+  // Ajuste retirado: la tarjeta dura 2 s fijos. Se descarta el valor guardado (p. ej. 4).
+  delete saved.cardSeconds;
   const settings: Settings = { ...settingsStore.get(), ...saved };
   if (!settings.deviceId) {
     settings.deviceId = randomUUID();
