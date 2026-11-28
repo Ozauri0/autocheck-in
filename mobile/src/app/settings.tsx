@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, colors, styles as ui } from '../components/ui';
+import { Button, colors, Credits, styles as ui } from '../components/ui';
 import { getDeviceEvents, getHealth } from '../lib/api';
 import { syncNow } from '../lib/autosync';
 import { refreshEvents } from '../lib/events';
@@ -110,6 +110,7 @@ export default function SettingsScreen() {
         disabled={testing}
       />
       <Text style={ui.muted}>ID del dispositivo: {saved.deviceId}</Text>
+      <Credits />
     </ScrollView>
   );
 }

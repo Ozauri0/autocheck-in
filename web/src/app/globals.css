@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy: #0b2341;
-  --color-navy-light: #16365f;
-  --color-accent: #1f8fd6;
+  /* Colores institucionales UCT: azul #0077ba y amarillo #fdc300. */
+  --color-navy: #00395c;
+  --color-navy-light: #00507f;
+  --color-accent: #0077ba;
   /* Variante oscura del acento: contraste AA para texto y botones. */
-  --color-accent-strong: #146ba3;
+  --color-accent-strong: #005f95;
+  --color-uct-yellow: #fdc300;
+  --color-uct-gray: #6f6f6f;
 }
 
 body {

@@ -1,11 +1,13 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { networkStore, reachableStore } from '../lib/connection';
 import { recordsStore } from '../lib/db';
 
 export const colors = {
-  navy: '#0b2341',
-  blue: '#1f8fd6',
+  // Colores institucionales UCT: azul #0077ba y amarillo #fdc300.
+  navy: '#00395c',
+  blue: '#0077ba',
+  yellow: '#fdc300',
   bg: '#f2f5f9',
   card: '#ffffff',
   text: '#13233a',
@@ -85,6 +87,36 @@ export function StatusBadge() {
 
 export const goSettings = () => router.push('/settings');
 
+/** Logo UCT + CINAP sobre fondo blanco. */
+export function BrandHeader() {
+  return (
+    <View style={styles.brand}>
+      <Image
+        source={require('../../assets/brand/uct-cinap.png')}
+        style={styles.brandLogo}
+        resizeMode="contain"
+        accessibilityLabel="Universidad Católica de Temuco · CINAP"
+      />
+    </View>
+  );
+}
+
+/** Créditos del desarrollador con enlace a su portafolio. */
+export function Credits() {
+  return (
+    <Text style={styles.credits}>
+      UCT · CINAP · Desarrollado por{' '}
+      <Text
+        accessibilityRole="link"
+        style={styles.creditsLink}
+        onPress={() => Linking.openURL('https://christianferrer.cl')}
+      >
+        Christian Ferrer
+      </Text>
+    </Text>
+  );
+}
+
 export function formatRange(start: string, end: string, withTime = false): string {
   const options: Intl.DateTimeFormatOptions = {
     day: '2-digit',
@@ -99,6 +131,17 @@ export function formatRange(start: string, end: string, withTime = false): strin
 
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
+  brand: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.yellow,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  brandLogo: { width: '100%', height: undefined, aspectRatio: 1122 / 209 },
+  credits: { fontSize: 15, color: colors.muted, textAlign: 'center', paddingVertical: 12 },
+  creditsLink: { color: colors.blue, fontWeight: '700', textDecorationLine: 'underline' },
   content: { padding: 16, gap: 12, width: '100%', maxWidth: 800, alignSelf: 'center' },
   button: {
     backgroundColor: colors.blue,

@@ -1,7 +1,16 @@
 import { router } from 'expo-router';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Card, formatRange, goSettings, StatusBadge, styles } from '../components/ui';
+import {
+  BrandHeader,
+  Button,
+  Card,
+  Credits,
+  formatRange,
+  goSettings,
+  StatusBadge,
+  styles,
+} from '../components/ui';
 import { eventsStore, refreshEvents } from '../lib/events';
 import { settingsStore } from '../lib/settings';
 
@@ -19,6 +28,7 @@ export default function EventsScreen() {
       refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshEvents} />}
       ListHeaderComponent={
         <View style={{ gap: 12 }}>
+          <BrandHeader />
           <StatusBadge />
           {!serverUrl && <Text style={styles.notice}>Configura el servidor en Ajustes.</Text>}
           {fromCache && error && (
@@ -33,6 +43,7 @@ export default function EventsScreen() {
           {loading ? 'Cargando eventos…' : 'No hay eventos activos. Desliza hacia abajo para actualizar.'}
         </Text>
       }
+      ListFooterComponent={<Credits />}
       renderItem={({ item }) => (
         <Card
           onPress={() =>

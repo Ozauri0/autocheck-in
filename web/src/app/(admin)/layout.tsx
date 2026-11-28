@@ -1,4 +1,5 @@
 import { LogOut, QrCode, Users } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { logoutAction } from "@/lib/actions";
 import { currentRole } from "@/lib/roles";
@@ -19,10 +20,24 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       >
         Saltar al contenido
       </a>
-      <header className="border-b-4 border-accent bg-navy text-white">
+      <header className="border-b-4 border-uct-yellow bg-navy text-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link href={isAdmin ? "/eventos" : "/escanear"} className="font-semibold">
-            Auto check-in <span className="text-sky-300">UCT</span>
+          <Link
+            href={isAdmin ? "/eventos" : "/escanear"}
+            className="flex min-w-0 items-center gap-3"
+          >
+            <Image
+              src="/brand/uct-isotipo.png"
+              alt=""
+              width={36}
+              height={36}
+              priority
+              className="size-9 shrink-0 rounded-full"
+            />
+            <span className="min-w-0 leading-tight">
+              <span className="block font-semibold whitespace-nowrap">Auto check-in</span>
+              <span className="block truncate text-xs text-white/75">UCT · CINAP</span>
+            </span>
           </Link>
           <div className="flex items-center gap-1">
             {isAdmin && (
@@ -33,7 +48,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             )}
             <Link href="/escanear" className={navLink}>
               <QrCode aria-hidden className="size-4" />
-              Escanear QR
+              <span className="max-[420px]:sr-only">Escanear QR</span>
             </Link>
             <form action={logoutAction}>
               <button type="submit" className={navLink}>

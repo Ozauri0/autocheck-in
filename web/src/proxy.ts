@@ -33,5 +33,5 @@ function redirectTo(request: NextRequest, pathname: string, search = "") {
 }
 
 export const config = {
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!login|_next/static|_next/image|brand/|icon.png).*)"],
 };
