@@ -6,9 +6,9 @@ Next.js (App Router) que consume la API Go según [`../docs/API.md`](../docs/API
 
 ```bash
 cp .env.example .env.local   # API_URL=http://localhost:8080
-npm install
-npm run dev                  # http://localhost:3000
-npm run lint && npm run build
+bun install
+bun run dev                  # http://localhost:3000
+bun run lint && bun run build
 ```
 
 ## Docker

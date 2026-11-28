@@ -114,7 +114,7 @@ No se valida: sin `|`, todo el texto se toma como nombre. En cada sesión cuenta
 ## Desarrollo y verificación
 
 ```sh
-cd web && npm run lint && npm run build
+cd web && bun run lint && bun run build
 bash scripts/smoke.sh
 ```
 

@@ -7,22 +7,22 @@ Check-in por QR para tablets o teléfonos fijos en la entrada de cada sala. Reac
 Usa un **dev build** (no Expo Go). Requiere Node 22+.
 
 ```bash
-npm install
+bun install
 
 # Local (Android SDK + JDK instalados, dispositivo con depuración USB o emulador)
-npx expo run:android
+bunx expo run:android
 
 # O en la nube con EAS
-npx eas-cli@latest build --profile development --platform android
-npx expo start --dev-client
+bunx eas-cli@latest build --profile development --platform android
+bunx expo start --dev-client
 ```
 
 Para instalar en las tablets del evento, genera un APK autónomo (sin servidor de desarrollo):
 
 ```bash
-npx eas-cli@latest build --profile preview --platform android
+bunx eas-cli@latest build --profile preview --platform android
 # o local
-npx expo run:android --variant release
+bunx expo run:android --variant release
 ```
 
 `android/` e `ios/` se generan solos y no se commitean.
@@ -52,7 +52,7 @@ En el directorio privado de la app:
 ## Verificación
 
 ```bash
-npx tsc --noEmit && npx jest && npx expo export --platform android
+bunx tsc --noEmit && bun run test && bunx expo export --platform android
 ```
 
-Nota: `xlsx` es la versión 0.18.5 de npm, que tiene avisos de seguridad al *leer* archivos manipulados; la app solo lee los Excel que ella misma escribe.
+Nota: `xlsx` es la versión 0.18.5 del registro npm, que tiene avisos de seguridad al *leer* archivos manipulados; la app solo lee los Excel que ella misma escribe.
